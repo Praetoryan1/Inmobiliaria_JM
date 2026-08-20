@@ -31,6 +31,15 @@ artifacts/
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
 
+# IDEs and editors
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages
@@ -38,6 +47,16 @@ ScaffoldingReadMe.txt
 
 # dotenv environment variables file
 .env
+
+# Local configuration and development certificates
+appsettings.Local.json
+appsettings.*.local.json
+*.pfx
+*.p12
+
+# Operating system files
+.DS_Store
+Thumbs.db
 
 # Others
 ~$*
