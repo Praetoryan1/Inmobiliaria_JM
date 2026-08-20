@@ -1,34 +1,23 @@
 # Inmobiliaria JM
 
-Sitio web desarrollado con ASP.NET Core MVC para administrar la información de una inmobiliaria. Esta versión corresponde a la **primera entrega** y contiene el ABM completo de propietarios e inquilinos.
+> Sitio web desarrollado con ASP.NET Core MVC para gestionar propietarios e inquilinos de una inmobiliaria.
 
-## Integrante
+---
 
-- Jonathan Muñoz
+## 👥 Integrantes del Grupo
 
-## Alcance de la primera entrega
+* **Jonathan Muñoz** - *jonathanezequielm20@gmail.com* - [@Praetoryan1](https://github.com/Praetoryan1) - Discord: `No informado`
 
-- Alta, consulta, modificación y baja de propietarios.
-- Alta, consulta, modificación y baja de inquilinos.
-- Búsqueda por DNI, nombre, apellido, teléfono o email.
-- Listados paginados con un máximo de 10 registros por página.
-- Validaciones tanto en el navegador como en el servidor.
-- Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
+---
 
-Las entidades restantes del proyecto general —inmuebles, reservas, pagos y usuarios— se incorporarán en entregas posteriores.
+## 📐 Modelado de Datos
 
-## Tecnologías
+A continuación se presenta el esquema del modelo correspondiente a la primera entrega de la aplicación. Propietario e Inquilino son entidades independientes, de acuerdo con el UML general del proyecto.
 
-- ASP.NET Core MVC sobre .NET 10.
-- C#.
-- MySQL/MariaDB.
-- `MySql.Data` 26.7.0.
-- Bootstrap 5.
-- XAMPP como entorno local recomendado.
+### Diagrama Entidad-Relación (DER) / Diagrama de Clases
 
-## Diagrama de clases
-
-El siguiente diagrama representa el recorte del modelo correspondiente a esta primera entrega. Propietario e Inquilino son entidades independientes, de acuerdo con el UML general del proyecto.
+<details>
+<summary>Ver diagrama en código Mermaid</summary>
 
 ```mermaid
 classDiagram
@@ -79,7 +68,37 @@ classDiagram
     RepositorioInquilinos --> Inquilino
 ```
 
-## Requisitos previos
+</details>
+
+---
+
+## ✅ Alcance de la Primera Entrega
+
+Esta versión contiene:
+
+* Alta, consulta, modificación y baja de propietarios.
+* Alta, consulta, modificación y baja de inquilinos.
+* Búsqueda por DNI, nombre, apellido, teléfono o email.
+* Listados paginados con un máximo de 10 registros por página.
+* Validaciones tanto en el navegador como en el servidor.
+* Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
+
+Las entidades restantes del proyecto general —inmuebles, reservas, pagos y usuarios— se incorporarán en entregas posteriores.
+
+---
+
+## 🛠️ Tecnologías
+
+* ASP.NET Core MVC sobre .NET 10.
+* C#.
+* MySQL/MariaDB.
+* `MySql.Data` 26.7.0.
+* Bootstrap 5.
+* XAMPP como entorno local recomendado.
+
+---
+
+## 📋 Requisitos Previos
 
 Antes de ejecutar el proyecto se necesita:
 
@@ -93,7 +112,9 @@ Se puede comprobar la instalación de .NET con:
 dotnet --version
 ```
 
-## Obtener el proyecto
+---
+
+## 📥 Obtener el Proyecto
 
 ```powershell
 git clone https://github.com/Praetoryan1/Inmobiliaria_JM.git
@@ -101,7 +122,9 @@ cd Inmobiliaria_JM
 dotnet restore
 ```
 
-## Crear e inicializar la base de datos
+---
+
+## 🗄️ Crear e Inicializar la Base de Datos
 
 El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, las tablas `Propietarios` e `Inquilinos` y registros iniciales para probar los ABM.
 
@@ -126,7 +149,9 @@ Get-Content .\DataBase\inmobiliaria_jm.sql -Raw |
 
 El script puede ejecutarse nuevamente sin duplicar los datos iniciales, porque utiliza `CREATE ... IF NOT EXISTS` e `INSERT IGNORE`.
 
-## Configurar la conexión
+---
+
+## 🔌 Configurar la Conexión
 
 La conexión local predeterminada se encuentra en [`appsettings.json`](appsettings.json):
 
@@ -136,33 +161,45 @@ Server=localhost;Port=3306;Database=inmobiliaria_jm;User ID=root;Password=;SslMo
 
 Esta configuración corresponde a XAMPP con el usuario `root`, sin contraseña y el puerto `3306`. Si la instalación utiliza otra contraseña, usuario o puerto, se debe actualizar `ConnectionStrings:DefaultConnection` antes de ejecutar la aplicación.
 
-## Ejecutar la aplicación
+---
 
-Desde la raíz del repositorio:
+## ▶️ Ejecutar la Aplicación
+
+1. Iniciar **MySQL** desde el panel de XAMPP.
+2. Abrir PowerShell en la raíz del repositorio.
+3. Ejecutar:
 
 ```powershell
 dotnet restore
 dotnet build
-dotnet run
+dotnet run --launch-profile http
 ```
 
-La consola indicará la dirección local. Con la configuración incluida, normalmente estará disponible en:
+4. Abrir en el navegador:
 
-- `http://localhost:5192`
-- `https://localhost:7048`
+```text
+http://localhost:5192
+```
 
 Rutas principales:
 
-- `/Propietarios`
-- `/Inquilinos`
+* `/Propietarios`
+* `/Inquilinos`
 
-Si el certificado HTTPS local no está configurado, se puede preparar con:
+Para detener la aplicación, presionar `Ctrl+C` en la consola.
+
+Si se prefiere HTTPS y el certificado local todavía no está configurado:
 
 ```powershell
 dotnet dev-certs https --trust
+dotnet run --launch-profile https
 ```
 
-## Estructura principal
+La dirección HTTPS configurada es `https://localhost:7048`.
+
+---
+
+## 📁 Estructura Principal
 
 ```text
 Controllers/     Controladores MVC de propietarios e inquilinos
