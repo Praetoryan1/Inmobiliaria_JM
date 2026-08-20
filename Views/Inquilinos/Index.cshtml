@@ -1,0 +1,111 @@
+@model IEnumerable<Inquilino>
+
+@{
+    ViewData["Title"] = "Inquilinos";
+    var busqueda = ViewBag.Busqueda as string ?? string.Empty;
+    var paginaActual = Convert.ToInt32(ViewBag.PaginaActual);
+    var totalPaginas = Convert.ToInt32(ViewBag.TotalPaginas);
+    var cantidadTotal = Convert.ToInt32(ViewBag.CantidadTotal);
+}
+
+<partial name="_Mensajes" />
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Inquilinos</h1>
+        <p class="text-secondary mb-0">Administración de inquilinos registrados.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">Nuevo inquilino</a>
+</div>
+
+<div class="card app-card mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md">
+                <label for="busqueda" class="visually-hidden">Buscar inquilinos</label>
+                <input id="busqueda" name="busqueda" value="@busqueda" class="form-control"
+                       placeholder="Buscar por DNI, nombre, apellido, teléfono o email" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(busqueda))
+            {
+                <div class="col-auto">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<div class="card app-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>DNI</th>
+                    <th>Apellido y nombre</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-secondary py-5">
+                            No se encontraron inquilinos.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var inquilino in Model)
+                    {
+                        <tr>
+                            <td>@inquilino.Dni</td>
+                            <td class="fw-semibold">@inquilino.Apellido, @inquilino.Nombre</td>
+                            <td>@(inquilino.Telefono ?? "—")</td>
+                            <td><a href="mailto:@inquilino.Email">@inquilino.Email</a></td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@inquilino.IdInquilino"
+                                   class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-action="Edit" asp-route-id="@inquilino.IdInquilino"
+                                   class="btn btn-sm btn-outline-primary">Editar</a>
+                                <a asp-action="Delete" asp-route-id="@inquilino.IdInquilino"
+                                   class="btn btn-sm btn-outline-danger">Eliminar</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <span class="text-secondary small">@cantidadTotal inquilino(s) encontrado(s)</span>
+        @if (totalPaginas > 1)
+        {
+            <nav aria-label="Paginación de inquilinos">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(paginaActual == 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual - 1)"
+                           asp-route-busqueda="@busqueda">Anterior</a>
+                    </li>
+                    @for (var pagina = 1; pagina <= totalPaginas; pagina++)
+                    {
+                        <li class="page-item @(pagina == paginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@pagina"
+                               asp-route-busqueda="@busqueda">@pagina</a>
+                        </li>
+                    }
+                    <li class="page-item @(paginaActual == totalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual + 1)"
+                           asp-route-busqueda="@busqueda">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

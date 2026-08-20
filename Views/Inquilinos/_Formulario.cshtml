@@ -1,0 +1,32 @@
+@model Inquilino
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div class="row g-3">
+    <div class="col-md-4">
+        <label asp-for="Dni" class="form-label"></label>
+        <input asp-for="Dni" class="form-control" inputmode="numeric" maxlength="8"
+               autocomplete="off" />
+        <span asp-validation-for="Dni" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Nombre" class="form-label"></label>
+        <input asp-for="Nombre" class="form-control" autocomplete="given-name" />
+        <span asp-validation-for="Nombre" class="text-danger small"></span>
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Apellido" class="form-label"></label>
+        <input asp-for="Apellido" class="form-control" autocomplete="family-name" />
+        <span asp-validation-for="Apellido" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Telefono" class="form-label"></label>
+        <input asp-for="Telefono" class="form-control" type="tel" autocomplete="tel" />
+        <span asp-validation-for="Telefono" class="text-danger small"></span>
+    </div>
+    <div class="col-md-6">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" type="email" autocomplete="email" />
+        <span asp-validation-for="Email" class="text-danger small"></span>
+    </div>
+</div>

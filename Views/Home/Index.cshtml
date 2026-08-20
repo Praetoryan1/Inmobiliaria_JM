@@ -1,8 +1,38 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Inicio";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<section class="app-hero p-4 p-md-5 mb-4">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-8">
+            <span class="badge text-bg-light mb-3">Sistema de gestión inmobiliaria</span>
+            <h1 class="display-5 fw-bold">Administración clara y centralizada</h1>
+            <p class="lead mb-0">
+                Gestione propietarios e inquilinos desde un único sitio, con búsqueda y acceso rápido a cada registro.
+            </p>
+        </div>
+    </div>
+</section>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4">
+                <div class="app-card-icon mb-3">P</div>
+                <h2 class="h4">Propietarios</h2>
+                <p class="text-secondary">Consulte, registre y actualice los datos de propietarios.</p>
+                <a asp-controller="Propietarios" asp-action="Index" class="btn btn-primary">Gestionar propietarios</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4">
+                <div class="app-card-icon mb-3">I</div>
+                <h2 class="h4">Inquilinos</h2>
+                <p class="text-secondary">Administre la información de las personas que realizan reservas.</p>
+                <a asp-controller="Inquilinos" asp-action="Index" class="btn btn-primary">Gestionar inquilinos</a>
+            </div>
+        </div>
+    </div>
 </div>

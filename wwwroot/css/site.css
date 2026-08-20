@@ -18,6 +18,7 @@ html {
 }
 
 body {
+  background-color: #f5f7fb;
   margin-bottom: 60px;
 }
 
@@ -28,4 +29,67 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+
+.app-navbar {
+  background: #17324d;
+}
+
+.app-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+.app-navbar .nav-link:hover,
+.app-navbar .nav-link:focus {
+  color: #fff;
+}
+
+.app-hero {
+  color: #fff;
+  background: linear-gradient(135deg, #17324d 0%, #246b8f 100%);
+  border-radius: 1rem;
+  box-shadow: 0 0.75rem 2rem rgba(23, 50, 77, 0.18);
+}
+
+.app-card {
+  border: 0;
+  border-radius: 0.85rem;
+  box-shadow: 0 0.35rem 1.25rem rgba(23, 50, 77, 0.08);
+}
+
+.app-card-icon {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  place-items: center;
+  color: #fff;
+  font-weight: 700;
+  background: #246b8f;
+  border-radius: 0.7rem;
+}
+
+.app-card .table thead th {
+  color: #526170;
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  background: #f8fafc;
+  border-bottom-width: 1px;
+}
+
+.app-details dt,
+.app-details dd {
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.validation-summary-valid,
+.field-validation-valid {
+  display: none;
+}
+
+.footer {
+  background: #fff;
 }
