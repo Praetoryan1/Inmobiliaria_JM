@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioPropietarios>();
 builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioInquilinos>();
+builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioTiposInmueble>();
 
 var app = builder.Build();
 

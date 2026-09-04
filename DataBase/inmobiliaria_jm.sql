@@ -1,4 +1,4 @@
--- Base de datos inicial para la primera entrega de Inmobiliaria_JM.
+-- Base de datos e inicialización del proyecto Inmobiliaria_JM.
 -- Compatible con MySQL y MariaDB (XAMPP).
 
 CREATE DATABASE IF NOT EXISTS inmobiliaria_jm
@@ -33,6 +33,13 @@ CREATE TABLE IF NOT EXISTS Inquilinos (
     CONSTRAINT CK_Inquilinos_Dni CHECK (Dni REGEXP '^[0-9]{7,8}$')
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS TiposInmueble (
+    IdTipoInmueble INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    Nombre VARCHAR(80) NOT NULL,
+    CONSTRAINT PK_TiposInmueble PRIMARY KEY (IdTipoInmueble),
+    CONSTRAINT UQ_TiposInmueble_Nombre UNIQUE (Nombre)
+) ENGINE = InnoDB;
+
 -- Datos de prueba para comprobar los ABM durante el desarrollo.
 INSERT IGNORE INTO Propietarios (Dni, Nombre, Apellido, Telefono, Email)
 VALUES
@@ -43,3 +50,10 @@ INSERT IGNORE INTO Inquilinos (Dni, Nombre, Apellido, Telefono, Email)
 VALUES
     ('30111222', 'María', 'López', '2664111222', 'maria.lopez@example.com'),
     ('33444555', 'Juan', 'Sosa', '2664444555', 'juan.sosa@example.com');
+
+INSERT IGNORE INTO TiposInmueble (Nombre)
+VALUES
+    ('Casa'),
+    ('Departamento'),
+    ('Monoambiente'),
+    ('Loft');

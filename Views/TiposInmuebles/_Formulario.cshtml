@@ -1,0 +1,9 @@
+@model TipoInmueble
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div>
+    <label asp-for="Nombre" class="form-label"></label>
+    <input asp-for="Nombre" class="form-control" maxlength="80" autocomplete="off" />
+    <span asp-validation-for="Nombre" class="text-danger small"></span>
+</div>
