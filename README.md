@@ -1,18 +1,23 @@
 # Inmobiliaria JM
 
-> Sitio web desarrollado con ASP.NET Core MVC para gestionar propietarios e inquilinos de una inmobiliaria.
+> Sitio web desarrollado con ASP.NET Core MVC para administrar propietarios, inquilinos, tipos de inmueble, inmuebles y reservas temporales.
 
 ---
 
-## 👥 Integrantes del Grupo
+## Integrantes del Grupo
 
 * **Jonathan Muñoz** - *jonathanezequielm20@gmail.com* - [@Praetoryan1](https://github.com/Praetoryan1) - Discord: `No informado`
 
 ---
 
-## 📐 Modelado de Datos
+## Modelado de Datos
 
-A continuación se presenta el esquema del modelo correspondiente a la primera entrega de la aplicación. Propietario e Inquilino son entidades independientes, de acuerdo con el UML general del proyecto.
+El modelo de esta segunda entrega separa a propietarios e inquilinos y relaciona las demás entidades de la siguiente manera:
+
+* Un propietario puede tener muchos inmuebles.
+* Un tipo de inmueble puede clasificar muchos inmuebles.
+* Un inmueble puede aparecer en muchas reservas, siempre que sus fechas no se superpongan.
+* Un inquilino puede realizar muchas reservas.
 
 ### Diagrama Entidad-Relación (DER) / Diagrama de Clases
 
@@ -41,53 +46,63 @@ classDiagram
         +string Email
     }
 
-    class RepositorioPropietarios {
-        +ObtenerLista(busqueda, pagina, tamPagina)
-        +ObtenerCantidad(busqueda)
-        +ObtenerPorId(id)
-        +Alta(propietario)
-        +Modificacion(propietario)
-        +Baja(id)
+    class TipoInmueble {
+        +int IdTipoInmueble
+        +string Nombre
     }
 
-    class RepositorioInquilinos {
-        +ObtenerLista(busqueda, pagina, tamPagina)
-        +ObtenerCantidad(busqueda)
-        +ObtenerPorId(id)
-        +Alta(inquilino)
-        +Modificacion(inquilino)
-        +Baja(id)
+    class Inmueble {
+        +int IdInmueble
+        +int IdPropietario
+        +int IdTipoInmueble
+        +string Direccion
+        +int Cupo
+        +string Coordenadas
+        +decimal PrecioDia
+        +bool Disponible
+        +string ImagenPortada
     }
 
-    class PropietariosController
-    class InquilinosController
+    class Reserva {
+        +int IdReserva
+        +int IdInmueble
+        +int IdInquilino
+        +date FechaDesde
+        +date FechaHasta
+        +decimal MontoDia
+        +date FechaTerminacionAnticipada
+        +decimal MontoMulta
+    }
 
-    PropietariosController --> RepositorioPropietarios
-    RepositorioPropietarios --> Propietario
-    InquilinosController --> RepositorioInquilinos
-    RepositorioInquilinos --> Inquilino
+    Propietario "1" --> "0..*" Inmueble : posee
+    TipoInmueble "1" --> "0..*" Inmueble : clasifica
+    Inmueble "1" --> "0..*" Reserva : se reserva
+    Inquilino "1" --> "0..*" Reserva : realiza
 ```
 
 </details>
 
 ---
 
-## ✅ Alcance de la Primera Entrega
+## Alcance de la Segunda Entrega
 
 Esta versión contiene:
 
-* Alta, consulta, modificación y baja de propietarios.
-* Alta, consulta, modificación y baja de inquilinos.
-* Búsqueda por DNI, nombre, apellido, teléfono o email.
-* Listados paginados con un máximo de 10 registros por página.
-* Validaciones tanto en el navegador como en el servidor.
+* ABM y vista de detalles de propietarios e inquilinos.
+* ABM y vista de detalles de tipos de inmueble.
+* ABM y vista de detalles de inmuebles, con propietario, tipo, disponibilidad e imagen de portada.
+* ABM y vista de detalles de reservas, relacionadas con un inmueble y un inquilino.
+* Búsquedas y listados paginados con un máximo de 10 registros por página.
+* Filtro de inmuebles por disponibilidad y filtro de reservas por estado.
+* Validaciones en el navegador y en el servidor.
+* Control de fechas y prevención de reservas superpuestas para un mismo inmueble.
 * Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
 
-Las entidades restantes del proyecto general —inmuebles, reservas, pagos y usuarios— se incorporarán en entregas posteriores.
+Los pagos, usuarios, autenticación y la gestión de terminaciones anticipadas corresponden a próximas entregas.
 
 ---
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 * ASP.NET Core MVC sobre .NET 10.
 * C#.
@@ -98,7 +113,7 @@ Las entidades restantes del proyecto general —inmuebles, reservas, pagos y usu
 
 ---
 
-## 📋 Requisitos Previos
+## Requisitos Previos
 
 Antes de ejecutar el proyecto se necesita:
 
@@ -114,7 +129,7 @@ dotnet --version
 
 ---
 
-## 📥 Obtener el Proyecto
+## Obtener el Proyecto
 
 ```powershell
 git clone https://github.com/Praetoryan1/Inmobiliaria_JM.git
@@ -124,9 +139,9 @@ dotnet restore
 
 ---
 
-## 🗄️ Crear e Inicializar la Base de Datos
+## Crear e Inicializar la Base de Datos
 
-El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, las tablas `Propietarios` e `Inquilinos` y registros iniciales para probar los ABM.
+El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, sus cinco tablas y datos iniciales para comprobar los ABM.
 
 ### Opción 1: importar con phpMyAdmin
 
@@ -136,7 +151,7 @@ El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea l
 4. Seleccionar la pestaña **Importar**.
 5. Elegir el archivo `DataBase/inmobiliaria_jm.sql` del proyecto.
 6. Mantener el formato SQL y presionar **Continuar**.
-7. Verificar que aparezca la base `inmobiliaria_jm` con las tablas `propietarios` e `inquilinos`.
+7. Verificar que la base `inmobiliaria_jm` contenga las tablas `Propietarios`, `Inquilinos`, `TiposInmueble`, `Inmuebles` y `Reservas`.
 
 ### Opción 2: importar desde PowerShell
 
@@ -147,11 +162,11 @@ Get-Content .\DataBase\inmobiliaria_jm.sql -Raw |
     & C:\xampp\mysql\bin\mysql.exe --user=root --default-character-set=utf8mb4
 ```
 
-El script puede ejecutarse nuevamente sin duplicar los datos iniciales, porque utiliza `CREATE ... IF NOT EXISTS` e `INSERT IGNORE`.
+El script puede ejecutarse nuevamente sin duplicar los datos iniciales, porque utiliza comprobaciones de existencia antes de insertar.
 
 ---
 
-## 🔌 Configurar la Conexión
+## Configurar la Conexión
 
 La conexión local predeterminada se encuentra en [`appsettings.json`](appsettings.json):
 
@@ -163,9 +178,9 @@ Esta configuración corresponde a XAMPP con el usuario `root`, sin contraseña y
 
 ---
 
-## ▶️ Ejecutar la Aplicación
+## Ejecutar la Aplicación
 
-1. Iniciar **MySQL** desde el panel de XAMPP.
+1. Iniciar **MySQL** desde el panel de XAMPP. Apache no es necesario para ejecutar ASP.NET, salvo que se quiera usar phpMyAdmin.
 2. Abrir PowerShell en la raíz del repositorio.
 3. Ejecutar:
 
@@ -185,6 +200,9 @@ Rutas principales:
 
 * `/Propietarios`
 * `/Inquilinos`
+* `/TiposInmuebles`
+* `/Inmuebles`
+* `/Reservas`
 
 Para detener la aplicación, presionar `Ctrl+C` en la consola.
 
@@ -199,13 +217,13 @@ La dirección HTTPS configurada es `https://localhost:7048`.
 
 ---
 
-## 📁 Estructura Principal
+## Estructura Principal
 
 ```text
-Controllers/     Controladores MVC de propietarios e inquilinos
+Controllers/     Controladores MVC de los cinco ABM
 DataBase/        Script de creación e inicialización de MySQL
-Models/          Entidades y validaciones
+Models/          Entidades, relaciones y validaciones
 Repositories/    Acceso a datos mediante MySql.Data
-Views/           Vistas Razor de los ABM
-wwwroot/         CSS, JavaScript y dependencias web estáticas
+Views/           Vistas Razor de los ABM y sus detalles
+wwwroot/         CSS, JavaScript, archivos estáticos e imágenes cargadas
 ```
