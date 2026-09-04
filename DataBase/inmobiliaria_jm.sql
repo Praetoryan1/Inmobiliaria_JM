@@ -63,6 +63,30 @@ CREATE TABLE IF NOT EXISTS Inmuebles (
     CONSTRAINT CK_Inmuebles_PrecioDia CHECK (PrecioDia > 0)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS Reservas (
+    IdReserva INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    IdInmueble INT UNSIGNED NOT NULL,
+    IdInquilino INT UNSIGNED NOT NULL,
+    FechaDesde DATE NOT NULL,
+    FechaHasta DATE NOT NULL,
+    MontoDia DECIMAL(12, 2) NOT NULL,
+    FechaTerminacionAnticipada DATE NULL,
+    MontoMulta DECIMAL(12, 2) NULL,
+    CONSTRAINT PK_Reservas PRIMARY KEY (IdReserva),
+    CONSTRAINT FK_Reservas_Inmuebles FOREIGN KEY (IdInmueble)
+        REFERENCES Inmuebles (IdInmueble)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT FK_Reservas_Inquilinos FOREIGN KEY (IdInquilino)
+        REFERENCES Inquilinos (IdInquilino)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT CK_Reservas_Fechas CHECK (FechaHasta > FechaDesde),
+    CONSTRAINT CK_Reservas_MontoDia CHECK (MontoDia > 0),
+    CONSTRAINT CK_Reservas_MontoMulta CHECK (MontoMulta IS NULL OR MontoMulta >= 0),
+    INDEX IX_Reservas_Inmueble_Fechas (IdInmueble, FechaDesde, FechaHasta)
+) ENGINE = InnoDB;
+
 -- Datos de prueba para comprobar los ABM durante el desarrollo.
 INSERT IGNORE INTO Propietarios (Dni, Nombre, Apellido, Telefono, Email)
 VALUES
@@ -121,4 +145,27 @@ WHERE p.Dni = '22987654'
       SELECT 1
       FROM Inmuebles i
       WHERE i.Direccion = 'Las Heras 840, San Luis'
+  );
+
+INSERT INTO Reservas
+    (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
+     FechaTerminacionAnticipada, MontoMulta)
+SELECT
+    i.IdInmueble,
+    iq.IdInquilino,
+    '2026-10-10',
+    '2026-10-15',
+    i.PrecioDia,
+    NULL,
+    NULL
+FROM Inmuebles i
+INNER JOIN Inquilinos iq ON iq.Dni = '30111222'
+WHERE i.Direccion = 'Av. Illia 125, San Luis'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Reservas r
+      WHERE r.IdInmueble = i.IdInmueble
+        AND r.IdInquilino = iq.IdInquilino
+        AND r.FechaDesde = '2026-10-10'
+        AND r.FechaHasta = '2026-10-15'
   );

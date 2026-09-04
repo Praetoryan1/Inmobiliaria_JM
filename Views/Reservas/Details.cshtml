@@ -1,0 +1,74 @@
+@model Reserva
+
+@{
+    ViewData["Title"] = "Detalle de la reserva";
+    var finEfectivo = Model.FechaTerminacionAnticipada ?? Model.FechaHasta;
+    var cantidadDias = Math.Max(1, (finEfectivo.Date - Model.FechaDesde.Date).Days);
+    var montoEstimado = cantidadDias * Model.MontoDia;
+    var claseEstado = Model.Estado.StartsWith("Vigente")
+        ? "text-bg-success"
+        : Model.Estado == "Pendiente"
+            ? "text-bg-primary"
+            : "text-bg-secondary";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+            <div>
+                <h1 class="h2 mb-1">Detalle de la reserva</h1>
+                <p class="text-secondary mb-0">Información completa del alquiler temporario.</p>
+            </div>
+            <a asp-action="Edit" asp-route-id="@Model.IdReserva" class="btn btn-primary">Editar</a>
+        </div>
+
+        <div class="card app-card">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <h2 class="h4 mb-0">Reserva Nº @Model.IdReserva</h2>
+                    <span class="badge @claseEstado">@Model.Estado</span>
+                </div>
+                <dl class="row mb-0 app-details">
+                    <dt class="col-sm-4">Inmueble</dt>
+                    <dd class="col-sm-8">
+                        @Model.Inmueble?.Direccion
+                        <span class="text-secondary">· @Model.Inmueble?.TipoInmueble?.Nombre</span>
+                    </dd>
+                    <dt class="col-sm-4">Propietario</dt>
+                    <dd class="col-sm-8">
+                        @Model.Inmueble?.Propietario?.Apellido, @Model.Inmueble?.Propietario?.Nombre
+                    </dd>
+                    <dt class="col-sm-4">Inquilino</dt>
+                    <dd class="col-sm-8">
+                        @Model.Inquilino?.Apellido, @Model.Inquilino?.Nombre
+                        <span class="text-secondary">· DNI @Model.Inquilino?.Dni</span>
+                    </dd>
+                    <dt class="col-sm-4">Fecha desde</dt>
+                    <dd class="col-sm-8">@Model.FechaDesde.ToString("dd/MM/yyyy")</dd>
+                    <dt class="col-sm-4">Fecha hasta original</dt>
+                    <dd class="col-sm-8">@Model.FechaHasta.ToString("dd/MM/yyyy")</dd>
+                    <dt class="col-sm-4">Monto por día</dt>
+                    <dd class="col-sm-8">@Model.MontoDia.ToString("C")</dd>
+                    <dt class="col-sm-4">Duración calculada</dt>
+                    <dd class="col-sm-8">@cantidadDias día(s)</dd>
+                    <dt class="col-sm-4">Monto estimado</dt>
+                    <dd class="col-sm-8">@montoEstimado.ToString("C")</dd>
+                    <dt class="col-sm-4">Terminación anticipada</dt>
+                    <dd class="col-sm-8">
+                        @(Model.FechaTerminacionAnticipada?.ToString("dd/MM/yyyy") ?? "No registrada")
+                    </dd>
+                    <dt class="col-sm-4">Monto de multa</dt>
+                    <dd class="col-sm-8">
+                        @(Model.MontoMulta?.ToString("C") ?? "No corresponde")
+                    </dd>
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd class="col-sm-8">@Model.Estado</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <a asp-action="Index" class="btn btn-link px-0">Volver al listado</a>
+        </div>
+    </div>
+</div>

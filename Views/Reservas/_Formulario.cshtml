@@ -1,0 +1,127 @@
+@model Reserva
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div class="row g-3">
+    <div class="col-12 position-relative">
+        <label asp-for="IdInmueble" class="form-label"></label>
+        <input asp-for="IdInmueble" type="hidden" />
+        <input id="inmuebleBusqueda" type="text" class="form-control"
+               value="@ViewBag.InmuebleSeleccionado" autocomplete="off"
+               placeholder="Escriba la dirección o el tipo" />
+        <div id="inmuebleResultados"
+             class="list-group app-autocomplete-results d-none"></div>
+        <span asp-validation-for="IdInmueble" class="text-danger small"></span>
+        <div class="form-text">Solo se ofrecen inmuebles habilitados; la disponibilidad entre fechas se valida al guardar.</div>
+    </div>
+
+    <div class="col-12 position-relative">
+        <label asp-for="IdInquilino" class="form-label"></label>
+        <input asp-for="IdInquilino" type="hidden" />
+        <input id="inquilinoBusqueda" type="text" class="form-control"
+               value="@ViewBag.InquilinoSeleccionado" autocomplete="off"
+               placeholder="Escriba un nombre, apellido o DNI" />
+        <div id="inquilinoResultados"
+             class="list-group app-autocomplete-results d-none"></div>
+        <span asp-validation-for="IdInquilino" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="FechaDesde" class="form-label"></label>
+        <input asp-for="FechaDesde" class="form-control" type="date" />
+        <span asp-validation-for="FechaDesde" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="FechaHasta" class="form-label"></label>
+        <input asp-for="FechaHasta" class="form-control" type="date" />
+        <span asp-validation-for="FechaHasta" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="MontoDia" class="form-label"></label>
+        <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input asp-for="MontoDia" class="form-control" type="number"
+                   min="0.01" step="0.01" />
+        </div>
+        <span asp-validation-for="MontoDia" class="text-danger small"></span>
+        <div class="form-text">Se conserva como valor histórico de esta reserva.</div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const configurarBuscador = (textoId, valorId, resultadosId, url, alSeleccionar) => {
+            const texto = document.getElementById(textoId);
+            const valor = document.getElementById(valorId);
+            const resultados = document.getElementById(resultadosId);
+            let temporizador;
+
+            const ocultar = () => {
+                resultados.classList.add("d-none");
+                resultados.replaceChildren();
+            };
+
+            const buscar = async () => {
+                try {
+                    const termino = texto.value.trim();
+                    const respuesta = await fetch(`${url}?termino=${encodeURIComponent(termino)}`);
+                    if (!respuesta.ok) {
+                        ocultar();
+                        return;
+                    }
+
+                    const opciones = await respuesta.json();
+                    resultados.replaceChildren();
+                    for (const opcion of opciones) {
+                        const boton = document.createElement("button");
+                        boton.type = "button";
+                        boton.className = "list-group-item list-group-item-action";
+                        boton.textContent = opcion.texto;
+                        boton.addEventListener("click", () => {
+                            valor.value = opcion.id;
+                            texto.value = opcion.texto;
+                            alSeleccionar?.(opcion);
+                            ocultar();
+                        });
+                        resultados.appendChild(boton);
+                    }
+
+                    resultados.classList.toggle("d-none", opciones.length === 0);
+                } catch {
+                    ocultar();
+                }
+            };
+
+            texto.addEventListener("input", () => {
+                valor.value = "";
+                clearTimeout(temporizador);
+                temporizador = setTimeout(buscar, 250);
+            });
+            texto.addEventListener("focus", buscar);
+            document.addEventListener("click", event => {
+                if (event.target !== texto && !resultados.contains(event.target)) {
+                    ocultar();
+                }
+            });
+        };
+
+        configurarBuscador(
+            "inmuebleBusqueda",
+            "IdInmueble",
+            "inmuebleResultados",
+            "@Url.Action("BuscarInmuebles", "Reservas")",
+            opcion => {
+                const monto = document.getElementById("MontoDia");
+                if (!monto.value || Number(monto.value) <= 0) {
+                    monto.value = opcion.precioDia;
+                }
+            });
+        configurarBuscador(
+            "inquilinoBusqueda",
+            "IdInquilino",
+            "inquilinoResultados",
+            "@Url.Action("BuscarInquilinos", "Reservas")");
+    });
+</script>
