@@ -85,6 +85,42 @@ body {
   border-bottom: 1px solid #edf0f3;
 }
 
+.app-autocomplete-results {
+  position: absolute;
+  z-index: 1050;
+  right: calc(var(--bs-gutter-x) * 0.5);
+  left: calc(var(--bs-gutter-x) * 0.5);
+  max-height: 16rem;
+  overflow-y: auto;
+  box-shadow: 0 0.75rem 1.5rem rgba(23, 50, 77, 0.14);
+}
+
+.app-property-thumb {
+  display: grid;
+  width: 4.5rem;
+  height: 3.25rem;
+  place-items: center;
+  object-fit: cover;
+  color: #6c757d;
+  font-size: 0.7rem;
+  text-align: center;
+  background: #e9ecef;
+  border-radius: 0.45rem;
+}
+
+.app-property-preview {
+  width: min(100%, 22rem);
+  max-height: 14rem;
+  object-fit: cover;
+  border-radius: 0.75rem;
+}
+
+.app-property-cover {
+  width: 100%;
+  max-height: 24rem;
+  object-fit: cover;
+}
+
 .validation-summary-valid,
 .field-validation-valid {
   display: none;

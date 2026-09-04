@@ -40,6 +40,29 @@ CREATE TABLE IF NOT EXISTS TiposInmueble (
     CONSTRAINT UQ_TiposInmueble_Nombre UNIQUE (Nombre)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS Inmuebles (
+    IdInmueble INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    IdPropietario INT UNSIGNED NOT NULL,
+    IdTipoInmueble INT UNSIGNED NOT NULL,
+    Direccion VARCHAR(200) NOT NULL,
+    Cupo INT UNSIGNED NOT NULL,
+    Coordenadas VARCHAR(100) NOT NULL,
+    PrecioDia DECIMAL(12, 2) NOT NULL,
+    Disponible TINYINT(1) NOT NULL DEFAULT 1,
+    ImagenPortada VARCHAR(255) NULL,
+    CONSTRAINT PK_Inmuebles PRIMARY KEY (IdInmueble),
+    CONSTRAINT FK_Inmuebles_Propietarios FOREIGN KEY (IdPropietario)
+        REFERENCES Propietarios (IdPropietario)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT FK_Inmuebles_TiposInmueble FOREIGN KEY (IdTipoInmueble)
+        REFERENCES TiposInmueble (IdTipoInmueble)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT CK_Inmuebles_Cupo CHECK (Cupo > 0),
+    CONSTRAINT CK_Inmuebles_PrecioDia CHECK (PrecioDia > 0)
+) ENGINE = InnoDB;
+
 -- Datos de prueba para comprobar los ABM durante el desarrollo.
 INSERT IGNORE INTO Propietarios (Dni, Nombre, Apellido, Telefono, Email)
 VALUES
@@ -57,3 +80,45 @@ VALUES
     ('Departamento'),
     ('Monoambiente'),
     ('Loft');
+
+INSERT INTO Inmuebles
+    (IdPropietario, IdTipoInmueble, Direccion, Cupo,
+     Coordenadas, PrecioDia, Disponible, ImagenPortada)
+SELECT
+    p.IdPropietario,
+    t.IdTipoInmueble,
+    'Av. Illia 125, San Luis',
+    4,
+    '-33.3017, -66.3378',
+    45000.00,
+    1,
+    NULL
+FROM Propietarios p
+INNER JOIN TiposInmueble t ON t.Nombre = 'Departamento'
+WHERE p.Dni = '20123456'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Inmuebles i
+      WHERE i.Direccion = 'Av. Illia 125, San Luis'
+  );
+
+INSERT INTO Inmuebles
+    (IdPropietario, IdTipoInmueble, Direccion, Cupo,
+     Coordenadas, PrecioDia, Disponible, ImagenPortada)
+SELECT
+    p.IdPropietario,
+    t.IdTipoInmueble,
+    'Las Heras 840, San Luis',
+    2,
+    '-33.2950, -66.3356',
+    32000.00,
+    1,
+    NULL
+FROM Propietarios p
+INNER JOIN TiposInmueble t ON t.Nombre = 'Monoambiente'
+WHERE p.Dni = '22987654'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Inmuebles i
+      WHERE i.Direccion = 'Las Heras 840, San Luis'
+  );

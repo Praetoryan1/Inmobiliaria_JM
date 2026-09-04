@@ -8,7 +8,7 @@
             <span class="badge text-bg-light mb-3">Sistema de gestión inmobiliaria</span>
             <h1 class="display-5 fw-bold">Administración clara y centralizada</h1>
             <p class="lead mb-0">
-                Gestione propietarios, inquilinos y tipos de inmueble desde un único sitio, con búsqueda y acceso rápido a cada registro.
+                Gestione propietarios, inquilinos, tipos e inmuebles desde un único sitio, con búsqueda y acceso rápido a cada registro.
             </p>
         </div>
     </div>
@@ -42,6 +42,16 @@
                 <h2 class="h4">Tipos de inmueble</h2>
                 <p class="text-secondary">Administre las clasificaciones disponibles para los inmuebles.</p>
                 <a asp-controller="TiposInmuebles" asp-action="Index" class="btn btn-primary">Gestionar tipos</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-lg-4">
+        <div class="card app-card h-100">
+            <div class="card-body p-4">
+                <div class="app-card-icon mb-3">IM</div>
+                <h2 class="h4">Inmuebles</h2>
+                <p class="text-secondary">Registre propiedades, disponibilidad, precio e imagen de portada.</p>
+                <a asp-controller="Inmuebles" asp-action="Index" class="btn btn-primary">Gestionar inmuebles</a>
             </div>
         </div>
     </div>

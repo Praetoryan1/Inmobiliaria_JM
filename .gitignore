@@ -40,6 +40,9 @@ ScaffoldingReadMe.txt
 *.userosscache
 *.sln.docstates
 
+# Archivos subidos durante la ejecución
+wwwroot/uploads/
+
 # NuGet Packages
 *.nupkg
 # NuGet Symbol Packages

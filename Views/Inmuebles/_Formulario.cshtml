@@ -1,0 +1,150 @@
+@model Inmueble
+
+<div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+<div class="row g-3">
+    <div class="col-12 position-relative">
+        <label asp-for="IdPropietario" class="form-label"></label>
+        <input asp-for="IdPropietario" type="hidden" />
+        <input id="propietarioBusqueda" type="text" class="form-control"
+               value="@ViewBag.PropietarioSeleccionado" autocomplete="off"
+               placeholder="Escriba un nombre, apellido o DNI" />
+        <div id="propietarioResultados"
+             class="list-group app-autocomplete-results d-none"></div>
+        <span asp-validation-for="IdPropietario" class="text-danger small"></span>
+        <div class="form-text">La búsqueda consulta hasta diez propietarios en el servidor.</div>
+    </div>
+
+    <div class="col-md-7">
+        <label asp-for="Direccion" class="form-label"></label>
+        <input asp-for="Direccion" class="form-control" maxlength="200" />
+        <span asp-validation-for="Direccion" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-5 position-relative">
+        <label asp-for="IdTipoInmueble" class="form-label"></label>
+        <input asp-for="IdTipoInmueble" type="hidden" />
+        <input id="tipoBusqueda" type="text" class="form-control"
+               value="@ViewBag.TipoSeleccionado" autocomplete="off"
+               placeholder="Escriba el tipo" />
+        <div id="tipoResultados"
+             class="list-group app-autocomplete-results d-none"></div>
+        <span asp-validation-for="IdTipoInmueble" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="Cupo" class="form-label"></label>
+        <input asp-for="Cupo" class="form-control" type="number" min="1" max="100" />
+        <span asp-validation-for="Cupo" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4">
+        <label asp-for="PrecioDia" class="form-label"></label>
+        <div class="input-group">
+            <span class="input-group-text">$</span>
+            <input asp-for="PrecioDia" class="form-control" type="number"
+                   min="0.01" step="0.01" />
+        </div>
+        <span asp-validation-for="PrecioDia" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-4 d-flex align-items-end">
+        <div class="form-check form-switch mb-2">
+            <input asp-for="Disponible" class="form-check-input" />
+            <label asp-for="Disponible" class="form-check-label"></label>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="Coordenadas" class="form-label"></label>
+        <input asp-for="Coordenadas" class="form-control" maxlength="100"
+               placeholder="Ej.: -33.3017, -66.3378" />
+        <span asp-validation-for="Coordenadas" class="text-danger small"></span>
+    </div>
+
+    <div class="col-md-6">
+        <label asp-for="ImagenArchivo" class="form-label"></label>
+        <input asp-for="ImagenArchivo" class="form-control" type="file"
+               accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" />
+        <span asp-validation-for="ImagenArchivo" class="text-danger small"></span>
+        <div class="form-text">Formatos JPG, PNG o WEBP. Tamaño máximo: 5 MB.</div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.ImagenPortada))
+    {
+        <div class="col-12">
+            <div class="small text-secondary mb-2">Portada actual</div>
+            <img src="@Model.ImagenPortada" alt="Portada actual del inmueble"
+                 class="app-property-preview" />
+        </div>
+    }
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const configurarBuscador = (textoId, valorId, resultadosId, url) => {
+            const texto = document.getElementById(textoId);
+            const valor = document.getElementById(valorId);
+            const resultados = document.getElementById(resultadosId);
+            let temporizador;
+
+            const ocultar = () => {
+                resultados.classList.add("d-none");
+                resultados.replaceChildren();
+            };
+
+            const buscar = async () => {
+                const termino = texto.value.trim();
+                try {
+                    const respuesta = await fetch(`${url}?termino=${encodeURIComponent(termino)}`);
+                    if (!respuesta.ok) {
+                        ocultar();
+                        return;
+                    }
+
+                    const opciones = await respuesta.json();
+                    resultados.replaceChildren();
+                    for (const opcion of opciones) {
+                        const boton = document.createElement("button");
+                        boton.type = "button";
+                        boton.className = "list-group-item list-group-item-action";
+                        boton.textContent = opcion.texto;
+                        boton.addEventListener("click", () => {
+                            valor.value = opcion.id;
+                            texto.value = opcion.texto;
+                            ocultar();
+                        });
+                        resultados.appendChild(boton);
+                    }
+
+                    resultados.classList.toggle("d-none", opciones.length === 0);
+                } catch {
+                    ocultar();
+                }
+            };
+
+            texto.addEventListener("input", () => {
+                valor.value = "";
+                clearTimeout(temporizador);
+                temporizador = setTimeout(buscar, 250);
+            });
+            texto.addEventListener("focus", buscar);
+            document.addEventListener("click", event => {
+                if (event.target !== texto && !resultados.contains(event.target)) {
+                    ocultar();
+                }
+            });
+        };
+
+        configurarBuscador(
+            "propietarioBusqueda",
+            "IdPropietario",
+            "propietarioResultados",
+            "@Url.Action("BuscarPropietarios", "Inmuebles")");
+        configurarBuscador(
+            "tipoBusqueda",
+            "IdTipoInmueble",
+            "tipoResultados",
+            "@Url.Action("BuscarTipos", "Inmuebles")");
+    });
+</script>

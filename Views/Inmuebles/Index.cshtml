@@ -1,0 +1,145 @@
+@model IEnumerable<Inmueble>
+
+@{
+    ViewData["Title"] = "Inmuebles";
+    var busqueda = ViewBag.Busqueda as string ?? string.Empty;
+    bool? disponible = ViewBag.Disponible;
+    var paginaActual = Convert.ToInt32(ViewBag.PaginaActual);
+    var totalPaginas = Convert.ToInt32(ViewBag.TotalPaginas);
+    var cantidadTotal = Convert.ToInt32(ViewBag.CantidadTotal);
+}
+
+<partial name="_Mensajes" />
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Inmuebles</h1>
+        <p class="text-secondary mb-0">Propiedades administradas por la inmobiliaria.</p>
+    </div>
+    <a asp-action="Create" class="btn btn-primary">Nuevo inmueble</a>
+</div>
+
+<div class="card app-card mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-lg">
+                <label for="busqueda" class="visually-hidden">Buscar inmuebles</label>
+                <input id="busqueda" name="busqueda" value="@busqueda" class="form-control"
+                       placeholder="Buscar por dirección, coordenadas, propietario, DNI o tipo" />
+            </div>
+            <div class="col-12 col-sm-5 col-lg-3">
+                <label for="disponible" class="visually-hidden">Filtrar por disponibilidad</label>
+                <select id="disponible" name="disponible" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="true" selected="@(disponible == true)">Disponibles</option>
+                    <option value="false" selected="@(disponible == false)">Suspendidos</option>
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(busqueda) || disponible.HasValue)
+            {
+                <div class="col-auto">
+                    <a asp-action="Index" class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<div class="card app-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Portada</th>
+                    <th>Dirección</th>
+                    <th>Tipo</th>
+                    <th>Propietario</th>
+                    <th>Cupo</th>
+                    <th>Precio por día</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary py-5">
+                            No se encontraron inmuebles.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var inmueble in Model)
+                    {
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(inmueble.ImagenPortada))
+                                {
+                                    <img src="@inmueble.ImagenPortada" alt="Portada de @inmueble.Direccion"
+                                         class="app-property-thumb" />
+                                }
+                                else
+                                {
+                                    <div class="app-property-thumb app-property-placeholder">Sin foto</div>
+                                }
+                            </td>
+                            <td class="fw-semibold">@inmueble.Direccion</td>
+                            <td>@inmueble.TipoInmueble?.Nombre</td>
+                            <td>@inmueble.Propietario?.Apellido, @inmueble.Propietario?.Nombre</td>
+                            <td>@inmueble.Cupo</td>
+                            <td>@inmueble.PrecioDia.ToString("C")</td>
+                            <td>
+                                @if (inmueble.Disponible)
+                                {
+                                    <span class="badge text-bg-success">Disponible</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Suspendido</span>
+                                }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@inmueble.IdInmueble"
+                                   class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-action="Edit" asp-route-id="@inmueble.IdInmueble"
+                                   class="btn btn-sm btn-outline-primary">Editar</a>
+                                <a asp-action="Delete" asp-route-id="@inmueble.IdInmueble"
+                                   class="btn btn-sm btn-outline-danger">Eliminar</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <span class="text-secondary small">@cantidadTotal inmueble(s) encontrado(s)</span>
+        @if (totalPaginas > 1)
+        {
+            <nav aria-label="Paginación de inmuebles">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(paginaActual == 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual - 1)"
+                           asp-route-busqueda="@busqueda" asp-route-disponible="@disponible">Anterior</a>
+                    </li>
+                    @for (var pagina = 1; pagina <= totalPaginas; pagina++)
+                    {
+                        <li class="page-item @(pagina == paginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@pagina"
+                               asp-route-busqueda="@busqueda" asp-route-disponible="@disponible">@pagina</a>
+                        </li>
+                    }
+                    <li class="page-item @(paginaActual == totalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(paginaActual + 1)"
+                           asp-route-busqueda="@busqueda" asp-route-disponible="@disponible">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
