@@ -16,6 +16,7 @@ El modelo separa a propietarios e inquilinos y relaciona las demás entidades de
 
 * Un propietario puede tener muchos inmuebles.
 * Un tipo de inmueble puede clasificar muchos inmuebles.
+* Un inmueble puede tener muchas imágenes adicionales.
 * Un inmueble puede aparecer en muchas reservas, siempre que sus fechas no se superpongan.
 * Un inquilino puede realizar muchas reservas.
 * Una reserva puede tener muchos pagos.
@@ -80,6 +81,12 @@ classDiagram
         +int IdReservaOrigen
     }
 
+    class InmuebleImagen {
+        +int IdInmuebleImagen
+        +int IdInmueble
+        +string Ruta
+    }
+
     class Pago {
         +int IdPago
         +int IdReserva
@@ -104,6 +111,7 @@ classDiagram
 
     Propietario "1" --> "0..*" Inmueble : posee
     TipoInmueble "1" --> "0..*" Inmueble : clasifica
+    Inmueble "1" --> "0..*" InmuebleImagen : contiene
     Inmueble "1" --> "0..*" Reserva : se reserva
     Inquilino "1" --> "0..*" Reserva : realiza
     Reserva "1" --> "0..*" Pago : recibe
@@ -124,6 +132,7 @@ Esta versión contiene:
 
 * ABM y vista de detalles de propietarios, inquilinos y tipos de inmueble.
 * ABM y vista de detalles de inmuebles, con propietario, tipo, disponibilidad e imagen de portada.
+* Galería con carga múltiple de imágenes adicionales y eliminación administrativa.
 * ABM y vista de detalles de reservas, relacionadas con un inmueble y un inquilino.
 * Acceso mediante email y contraseña, con roles Administrador y Empleado.
 * Gestión administrativa de usuarios y edición del perfil propio.
@@ -144,7 +153,7 @@ Esta versión contiene:
 * Control de fechas y prevención de reservas superpuestas para un mismo inmueble.
 * Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
 
-Las imágenes adicionales e informes se incorporarán en los siguientes incrementos de la entrega final.
+Los informes se incorporarán en los siguientes incrementos de la entrega final.
 
 ---
 
@@ -187,7 +196,7 @@ dotnet restore
 
 ## Crear e Inicializar la Base de Datos
 
-El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, sus siete tablas y datos iniciales para comprobar los ABM.
+El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, sus ocho tablas y datos iniciales para comprobar los ABM.
 
 ### Opción 1: importar con phpMyAdmin
 
@@ -197,7 +206,7 @@ El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea l
 4. Seleccionar la pestaña **Importar**.
 5. Elegir el archivo `DataBase/inmobiliaria_jm.sql` del proyecto.
 6. Mantener el formato SQL y presionar **Continuar**.
-7. Verificar que la base `inmobiliaria_jm` contenga las tablas `Propietarios`, `Inquilinos`, `Usuarios`, `TiposInmueble`, `Inmuebles`, `Reservas` y `Pagos`.
+7. Verificar que la base `inmobiliaria_jm` contenga las tablas `Propietarios`, `Inquilinos`, `Usuarios`, `TiposInmueble`, `Inmuebles`, `InmuebleImagenes`, `Reservas` y `Pagos`.
 
 ### Opción 2: importar desde PowerShell
 

@@ -116,6 +116,19 @@ DEALLOCATE PREPARE sentencia;
 ALTER TABLE Inmuebles
     MODIFY PorcentajeReserva DECIMAL(5, 2) NOT NULL DEFAULT 20.00;
 
+CREATE TABLE IF NOT EXISTS InmuebleImagenes (
+    IdInmuebleImagen INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    IdInmueble INT UNSIGNED NOT NULL,
+    Ruta VARCHAR(255) NOT NULL,
+    CONSTRAINT PK_InmuebleImagenes PRIMARY KEY (IdInmuebleImagen),
+    CONSTRAINT UQ_InmuebleImagenes_Ruta UNIQUE (Ruta),
+    CONSTRAINT FK_InmuebleImagenes_Inmuebles FOREIGN KEY (IdInmueble)
+        REFERENCES Inmuebles (IdInmueble)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE,
+    INDEX IX_InmuebleImagenes_Inmueble (IdInmueble)
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS Reservas (
     IdReserva INT UNSIGNED NOT NULL AUTO_INCREMENT,
     IdInmueble INT UNSIGNED NOT NULL,

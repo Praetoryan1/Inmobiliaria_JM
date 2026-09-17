@@ -1,0 +1,36 @@
+@model InmuebleImagen
+
+@{
+    ViewData["Title"] = "Eliminar imagen";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card app-card border-danger">
+            <img src="@Model.Ruta"
+                 alt="Imagen de @Model.Inmueble?.Direccion"
+                 class="app-property-gallery-image" />
+            <div class="card-body p-4">
+                <h1 class="h3 text-danger">Eliminar imagen</h1>
+                <p>
+                    Esta acción eliminará definitivamente la imagen adicional de
+                    <strong>@Model.Inmueble?.Direccion</strong>.
+                </p>
+                <p class="fw-semibold">¿Desea continuar?</p>
+
+                <form asp-action="EliminarImagen" asp-route-id="@Model.IdInmuebleImagen"
+                      method="post">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Details" asp-route-id="@Model.IdInmueble"
+                           class="btn btn-outline-secondary">
+                            Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            Sí, eliminar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

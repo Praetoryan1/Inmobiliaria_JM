@@ -6,6 +6,8 @@
 
 <div class="row justify-content-center">
     <div class="col-xl-9">
+        <partial name="_Mensajes" />
+
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
             <div>
                 <h1 class="h2 mb-1">Detalle del inmueble</h1>
@@ -57,6 +59,66 @@
                     <dt class="col-sm-4">Imagen de portada</dt>
                     <dd class="col-sm-8">@(Model.ImagenPortada ?? "No informada")</dd>
                 </dl>
+            </div>
+        </div>
+
+        <div class="card app-card mt-4">
+            <div class="card-body p-4">
+                <div class="mb-4">
+                    <h2 class="h4 mb-1">Galería de imágenes</h2>
+                    <p class="text-secondary mb-0">
+                        Fotografías adicionales de la propiedad.
+                    </p>
+                </div>
+
+                <form asp-action="AgregarImagenes" asp-route-id="@Model.IdInmueble"
+                      method="post" enctype="multipart/form-data"
+                      class="border rounded-3 bg-light p-3 mb-4">
+                    <label for="archivos" class="form-label fw-semibold">
+                        Agregar imágenes
+                    </label>
+                    <input id="archivos" name="archivos" type="file"
+                           accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                           multiple required class="form-control" />
+                    <div class="form-text">
+                        Hasta 10 archivos JPG, PNG o WEBP por vez, con un máximo de 5 MB cada uno.
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">
+                        Cargar imágenes
+                    </button>
+                </form>
+
+                @if (Model.Imagenes.Count == 0)
+                {
+                    <p class="text-secondary mb-0">
+                        Este inmueble todavía no tiene imágenes adicionales.
+                    </p>
+                }
+                else
+                {
+                    <div class="row g-3">
+                        @foreach (var imagen in Model.Imagenes)
+                        {
+                            <div class="col-sm-6 col-lg-4">
+                                <div class="card h-100 overflow-hidden">
+                                    <img src="@imagen.Ruta"
+                                         alt="Imagen adicional de @Model.Direccion"
+                                         class="app-property-gallery-image" />
+                                    @if (User.IsInRole(RolesUsuario.Administrador))
+                                    {
+                                        <div class="card-body p-2 text-end">
+                                            <a asp-action="EliminarImagen"
+                                               asp-route-id="@imagen.IdInmuebleImagen"
+                                               class="btn btn-sm btn-outline-danger">
+                                                Eliminar
+                                            </a>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
             </div>
         </div>
 

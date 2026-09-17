@@ -12,6 +12,7 @@ builder.Services.AddScoped<RepositorioPropietarios>();
 builder.Services.AddScoped<RepositorioInquilinos>();
 builder.Services.AddScoped<RepositorioTiposInmueble>();
 builder.Services.AddScoped<RepositorioInmuebles>();
+builder.Services.AddScoped<RepositorioInmuebleImagenes>();
 builder.Services.AddScoped<RepositorioReservas>();
 builder.Services.AddScoped<RepositorioPagos>();
 builder.Services.AddScoped<RepositorioUsuarios>();

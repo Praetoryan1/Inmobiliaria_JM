@@ -53,4 +53,6 @@ public class Inmueble
     public Propietario? Propietario { get; set; }
 
     public TipoInmueble? TipoInmueble { get; set; }
+
+    public IList<InmuebleImagen> Imagenes { get; set; } = new List<InmuebleImagen>();
 }

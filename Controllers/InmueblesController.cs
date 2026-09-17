@@ -9,6 +9,7 @@ namespace inmobiliaria.Controllers;
 public class InmueblesController : Controller
 {
     private const int TamPagina = 10;
+    private const int MaximoImagenesPorCarga = 10;
     private const long TamanoMaximoImagen = 5 * 1024 * 1024;
     private static readonly HashSet<string> ExtensionesPermitidas =
         new(StringComparer.OrdinalIgnoreCase) { ".jpg", ".jpeg", ".png", ".webp" };
@@ -16,6 +17,7 @@ public class InmueblesController : Controller
     private readonly RepositorioInmuebles repositorio;
     private readonly RepositorioPropietarios repositorioPropietarios;
     private readonly RepositorioTiposInmueble repositorioTipos;
+    private readonly RepositorioInmuebleImagenes repositorioImagenes;
     private readonly IWebHostEnvironment environment;
     private readonly ILogger<InmueblesController> logger;
 
@@ -23,12 +25,14 @@ public class InmueblesController : Controller
         RepositorioInmuebles repositorio,
         RepositorioPropietarios repositorioPropietarios,
         RepositorioTiposInmueble repositorioTipos,
+        RepositorioInmuebleImagenes repositorioImagenes,
         IWebHostEnvironment environment,
         ILogger<InmueblesController> logger)
     {
         this.repositorio = repositorio;
         this.repositorioPropietarios = repositorioPropietarios;
         this.repositorioTipos = repositorioTipos;
+        this.repositorioImagenes = repositorioImagenes;
         this.environment = environment;
         this.logger = logger;
     }
@@ -60,7 +64,13 @@ public class InmueblesController : Controller
     public IActionResult Details(int id)
     {
         var inmueble = repositorio.ObtenerPorId(id);
-        return inmueble is null ? NotFound() : View(inmueble);
+        if (inmueble is null)
+        {
+            return NotFound();
+        }
+
+        inmueble.Imagenes = repositorioImagenes.ObtenerPorInmueble(id);
+        return View(inmueble);
     }
 
     public IActionResult Create()
@@ -99,7 +109,7 @@ public class InmueblesController : Controller
         }
         catch (MySqlException exception) when (exception.Number == 1452)
         {
-            EliminarImagen(imagenNueva);
+            EliminarArchivoImagen(imagenNueva);
             ModelState.AddModelError(
                 string.Empty,
                 "El propietario o el tipo seleccionado ya no existe.");
@@ -108,7 +118,7 @@ public class InmueblesController : Controller
         }
         catch (Exception exception)
         {
-            EliminarImagen(imagenNueva);
+            EliminarArchivoImagen(imagenNueva);
             logger.LogError(exception, "Error al crear un inmueble.");
             ModelState.AddModelError(
                 string.Empty,
@@ -170,18 +180,18 @@ public class InmueblesController : Controller
 
             if (!repositorio.Modificacion(inmueble))
             {
-                EliminarImagen(imagenNueva);
+                EliminarArchivoImagen(imagenNueva);
                 return NotFound();
             }
 
             if (imagenNueva is not null)
             {
-                EliminarImagen(inmuebleActual.ImagenPortada);
+                EliminarArchivoImagen(inmuebleActual.ImagenPortada);
             }
         }
         catch (MySqlException exception) when (exception.Number == 1452)
         {
-            EliminarImagen(imagenNueva);
+            EliminarArchivoImagen(imagenNueva);
             inmueble.ImagenPortada = inmuebleActual.ImagenPortada;
             ModelState.AddModelError(
                 string.Empty,
@@ -191,7 +201,7 @@ public class InmueblesController : Controller
         }
         catch (Exception exception)
         {
-            EliminarImagen(imagenNueva);
+            EliminarArchivoImagen(imagenNueva);
             inmueble.ImagenPortada = inmuebleActual.ImagenPortada;
             logger.LogError(
                 exception,
@@ -226,6 +236,8 @@ public class InmueblesController : Controller
             return NotFound();
         }
 
+        var imagenes = repositorioImagenes.ObtenerPorInmueble(id);
+
         try
         {
             if (!repositorio.Baja(id))
@@ -233,7 +245,11 @@ public class InmueblesController : Controller
                 return NotFound();
             }
 
-            EliminarImagen(inmueble.ImagenPortada);
+            EliminarArchivoImagen(inmueble.ImagenPortada);
+            foreach (var imagen in imagenes)
+            {
+                EliminarArchivoImagen(imagen.Ruta);
+            }
         }
         catch (MySqlException exception) when (exception.Number == 1451)
         {
@@ -254,6 +270,117 @@ public class InmueblesController : Controller
 
         TempData["Mensaje"] = "El inmueble se eliminó correctamente.";
         return RedirectToAction(nameof(Index));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AgregarImagenes(
+        int id,
+        List<IFormFile>? archivos)
+    {
+        if (repositorio.ObtenerPorId(id) is null)
+        {
+            return NotFound();
+        }
+
+        if (archivos is null || archivos.Count == 0)
+        {
+            TempData["Error"] = "Debe seleccionar al menos una imagen.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (archivos.Count > MaximoImagenesPorCarga)
+        {
+            TempData["Error"] =
+                $"Se pueden cargar hasta {MaximoImagenesPorCarga} imágenes por vez.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var errores = archivos
+            .Select(ObtenerErrorImagen)
+            .Where(error => error is not null)
+            .Distinct()
+            .ToList();
+        if (errores.Count > 0)
+        {
+            TempData["Error"] = string.Join(" ", errores);
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var rutasNuevas = new List<string>();
+        try
+        {
+            foreach (var archivo in archivos)
+            {
+                rutasNuevas.Add(await GuardarImagen(archivo));
+            }
+
+            repositorioImagenes.AltaVarias(id, rutasNuevas);
+        }
+        catch (Exception exception)
+        {
+            foreach (var ruta in rutasNuevas)
+            {
+                EliminarArchivoImagen(ruta);
+            }
+
+            logger.LogError(
+                exception,
+                "Error al agregar imágenes al inmueble {IdInmueble}.",
+                id);
+            TempData["Error"] =
+                "No se pudieron guardar las imágenes. Intente nuevamente.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        TempData["Mensaje"] = archivos.Count == 1
+            ? "La imagen se agregó correctamente."
+            : $"Las {archivos.Count} imágenes se agregaron correctamente.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [Authorize(Roles = RolesUsuario.Administrador)]
+    public IActionResult EliminarImagen(int id)
+    {
+        var imagen = repositorioImagenes.ObtenerPorId(id);
+        return imagen is null ? NotFound() : View(imagen);
+    }
+
+    [Authorize(Roles = RolesUsuario.Administrador)]
+    [HttpPost, ActionName(nameof(EliminarImagen))]
+    [ValidateAntiForgeryToken]
+    public IActionResult EliminarImagenConfirmada(int id)
+    {
+        var imagen = repositorioImagenes.ObtenerPorId(id);
+        if (imagen is null)
+        {
+            return NotFound();
+        }
+
+        try
+        {
+            if (!repositorioImagenes.Baja(id))
+            {
+                return NotFound();
+            }
+
+            EliminarArchivoImagen(imagen.Ruta);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Error al eliminar la imagen {IdInmuebleImagen}.",
+                id);
+            TempData["Error"] =
+                "No se pudo eliminar la imagen. Intente nuevamente.";
+            return RedirectToAction(
+                nameof(Details),
+                new { id = imagen.IdInmueble });
+        }
+
+        TempData["Mensaje"] = "La imagen se eliminó correctamente.";
+        return RedirectToAction(nameof(Details), new { id = imagen.IdInmueble });
     }
 
     [HttpGet]
@@ -306,28 +433,31 @@ public class InmueblesController : Controller
             return;
         }
 
-        if (archivo.Length == 0)
+        var error = ObtenerErrorImagen(archivo);
+        if (error is not null)
         {
             ModelState.AddModelError(
                 nameof(Inmueble.ImagenArchivo),
-                "El archivo de imagen está vacío.");
-            return;
+                error);
+        }
+    }
+
+    private static string? ObtenerErrorImagen(IFormFile archivo)
+    {
+        if (archivo.Length == 0)
+        {
+            return "Uno de los archivos de imagen está vacío.";
         }
 
         if (archivo.Length > TamanoMaximoImagen)
         {
-            ModelState.AddModelError(
-                nameof(Inmueble.ImagenArchivo),
-                "La imagen no puede superar los 5 MB.");
+            return "Cada imagen puede pesar como máximo 5 MB.";
         }
 
         var extension = Path.GetExtension(archivo.FileName);
-        if (!ExtensionesPermitidas.Contains(extension))
-        {
-            ModelState.AddModelError(
-                nameof(Inmueble.ImagenArchivo),
-                "Solo se permiten imágenes JPG, PNG o WEBP.");
-        }
+        return ExtensionesPermitidas.Contains(extension)
+            ? null
+            : "Solo se permiten imágenes JPG, PNG o WEBP.";
     }
 
     private async Task<string> GuardarImagen(IFormFile archivo)
@@ -344,7 +474,7 @@ public class InmueblesController : Controller
         return $"/uploads/inmuebles/{nombreArchivo}";
     }
 
-    private void EliminarImagen(string? rutaPublica)
+    private void EliminarArchivoImagen(string? rutaPublica)
     {
         if (string.IsNullOrWhiteSpace(rutaPublica))
         {
@@ -365,7 +495,17 @@ public class InmueblesController : Controller
 
         if (System.IO.File.Exists(rutaFisica))
         {
-            System.IO.File.Delete(rutaFisica);
+            try
+            {
+                System.IO.File.Delete(rutaFisica);
+            }
+            catch (Exception exception)
+            {
+                logger.LogWarning(
+                    exception,
+                    "No se pudo eliminar el archivo de imagen {RutaImagen}.",
+                    rutaFisica);
+            }
         }
     }
 }
