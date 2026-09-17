@@ -1,0 +1,87 @@
+@model TerminacionReservaViewModel
+
+@{
+    ViewData["Title"] = "Terminación anticipada";
+}
+
+<partial name="_Mensajes" />
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="mb-4">
+            <h1 class="h2 mb-1">Terminación anticipada</h1>
+            <p class="text-secondary mb-0">
+                Reserva Nº @Model.IdReserva · @Model.Reserva.Inmueble?.Direccion
+            </p>
+        </div>
+
+        <div class="card app-card mb-4">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-3">Fecha efectiva</h2>
+                <form asp-action="Terminacion" method="get" class="row g-3 align-items-end">
+                    <input type="hidden" name="id" value="@Model.IdReserva" />
+                    <div class="col-md-7">
+                        <label for="fechaTerminacion" class="form-label">Fecha efectiva de terminación</label>
+                        <input id="fechaTerminacion" name="fechaTerminacion" type="date"
+                               value="@Model.FechaTerminacion.ToString("yyyy-MM-dd")"
+                               min="@ViewBag.FechaMinima" max="@ViewBag.FechaMaxima"
+                               class="form-control" required />
+                    </div>
+                    <div class="col-md-5">
+                        <button type="submit" class="btn btn-outline-primary w-100">Calcular multa</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card app-card mb-4">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-4">Cálculo de la multa</h2>
+                <dl class="row mb-0 app-details">
+                    <dt class="col-sm-5">Período original</dt>
+                    <dd class="col-sm-7">
+                        @Model.Reserva.FechaDesde.ToString("dd/MM/yyyy") al
+                        @Model.Reserva.FechaHasta.ToString("dd/MM/yyyy")
+                    </dd>
+                    <dt class="col-sm-5">Duración original</dt>
+                    <dd class="col-sm-7">@Model.DiasOriginales día(s)</dd>
+                    <dt class="col-sm-5">Tiempo cumplido</dt>
+                    <dd class="col-sm-7">@Model.DiasCumplidos día(s)</dd>
+                    <dt class="col-sm-5">Tiempo restante</dt>
+                    <dd class="col-sm-7">@Model.DiasRestantes día(s)</dd>
+                    <dt class="col-sm-5">Porcentaje aplicado</dt>
+                    <dd class="col-sm-7">
+                        @Model.PorcentajeMulta.ToString("P0") del alquiler restante
+                    </dd>
+                    <dt class="col-sm-5">Cálculo</dt>
+                    <dd class="col-sm-7">
+                        @Model.DiasRestantes día(s) × @Model.Reserva.MontoDia.ToString("C") ×
+                        @Model.PorcentajeMulta.ToString("P0")
+                    </dd>
+                    <dt class="col-sm-5">Multa a pagar</dt>
+                    <dd class="col-sm-7 fs-4 fw-semibold text-danger">
+                        @Model.MontoMulta.ToString("C")
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="alert alert-warning" role="alert">
+            La terminación se confirmará únicamente junto con el pago de la multa. La fecha final
+            original no será modificada y el pago quedará registrado en el historial de la reserva.
+        </div>
+
+        <form asp-action="Terminacion" method="post">
+            <input asp-for="IdReserva" type="hidden" />
+            <input name="FechaTerminacion" type="hidden"
+                   value="@Model.FechaTerminacion.ToString("yyyy-MM-dd")" />
+            <div class="d-flex justify-content-end gap-2">
+                <a asp-action="Details" asp-route-id="@Model.IdReserva"
+                   class="btn btn-outline-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-danger">
+                    Registrar pago y terminar reserva
+                </button>
+            </div>
+        </form>
+    </div>
+</div>

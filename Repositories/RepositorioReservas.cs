@@ -14,6 +14,8 @@ public class RepositorioReservas : RepositorioBase
         r.MontoDia,
         r.FechaTerminacionAnticipada,
         r.MontoMulta,
+        r.IdUsuarioCreador,
+        r.IdUsuarioTerminador,
         i.IdPropietario,
         i.IdTipoInmueble,
         i.Direccion,
@@ -32,7 +34,17 @@ public class RepositorioReservas : RepositorioBase
         iq.Nombre AS InquilinoNombre,
         iq.Apellido AS InquilinoApellido,
         iq.Telefono AS InquilinoTelefono,
-        iq.Email AS InquilinoEmail
+        iq.Email AS InquilinoEmail,
+        uc.Nombre AS CreadorNombre,
+        uc.Apellido AS CreadorApellido,
+        uc.Email AS CreadorEmail,
+        uc.Rol AS CreadorRol,
+        uc.Avatar AS CreadorAvatar,
+        ut.Nombre AS TerminadorNombre,
+        ut.Apellido AS TerminadorApellido,
+        ut.Email AS TerminadorEmail,
+        ut.Rol AS TerminadorRol,
+        ut.Avatar AS TerminadorAvatar
         """;
 
     public RepositorioReservas(IConfiguration configuration)
@@ -60,6 +72,8 @@ public class RepositorioReservas : RepositorioBase
             INNER JOIN TiposInmueble t ON t.IdTipoInmueble = i.IdTipoInmueble
             INNER JOIN Propietarios p ON p.IdPropietario = i.IdPropietario
             INNER JOIN Inquilinos iq ON iq.IdInquilino = r.IdInquilino
+            INNER JOIN Usuarios uc ON uc.IdUsuario = r.IdUsuarioCreador
+            LEFT JOIN Usuarios ut ON ut.IdUsuario = r.IdUsuarioTerminador
             WHERE (
                 i.Direccion LIKE @busqueda
                 OR t.Nombre LIKE @busqueda
@@ -144,6 +158,8 @@ public class RepositorioReservas : RepositorioBase
             INNER JOIN TiposInmueble t ON t.IdTipoInmueble = i.IdTipoInmueble
             INNER JOIN Propietarios p ON p.IdPropietario = i.IdPropietario
             INNER JOIN Inquilinos iq ON iq.IdInquilino = r.IdInquilino
+            INNER JOIN Usuarios uc ON uc.IdUsuario = r.IdUsuarioCreador
+            LEFT JOIN Usuarios ut ON ut.IdUsuario = r.IdUsuarioTerminador
             WHERE r.IdReserva = @id;
             """;
         command.Parameters.Add("@id", MySqlDbType.Int32).Value = id;
@@ -183,7 +199,7 @@ public class RepositorioReservas : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar()) == 1;
     }
 
-    public int Alta(Reserva reserva)
+    public int Alta(Reserva reserva, int idUsuarioCreador)
     {
         ArgumentNullException.ThrowIfNull(reserva);
 
@@ -193,18 +209,87 @@ public class RepositorioReservas : RepositorioBase
         command.CommandText = """
             INSERT INTO Reservas
                 (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
-                 FechaTerminacionAnticipada, MontoMulta)
+                 FechaTerminacionAnticipada, MontoMulta,
+                 IdUsuarioCreador, IdUsuarioTerminador)
             VALUES
                 (@idInmueble, @idInquilino, @fechaDesde, @fechaHasta, @montoDia,
-                 NULL, NULL);
+                 NULL, NULL, @idUsuarioCreador, NULL);
             SELECT LAST_INSERT_ID();
             """;
         AgregarParametrosReserva(command, reserva);
+        command.Parameters.Add("@idUsuarioCreador", MySqlDbType.Int32).Value =
+            idUsuarioCreador;
 
         connection.Open();
         reserva.IdReserva = Convert.ToInt32(command.ExecuteScalar());
 
         return reserva.IdReserva;
+    }
+
+    public bool TerminarAnticipadamente(
+        int idReserva,
+        DateTime fechaTerminacion,
+        decimal montoMulta,
+        int idUsuarioTerminador)
+    {
+        using var connection = CrearConexion();
+        connection.Open();
+        using var transaction = connection.BeginTransaction();
+
+        try
+        {
+            using var actualizarReserva = connection.CreateCommand();
+            actualizarReserva.Transaction = transaction;
+            actualizarReserva.CommandText = """
+                UPDATE Reservas
+                SET FechaTerminacionAnticipada = @fechaTerminacion,
+                    MontoMulta = @montoMulta,
+                    IdUsuarioTerminador = @idUsuarioTerminador
+                WHERE IdReserva = @idReserva
+                  AND FechaTerminacionAnticipada IS NULL;
+                """;
+            actualizarReserva.Parameters.Add("@fechaTerminacion", MySqlDbType.Date).Value =
+                fechaTerminacion.Date;
+            actualizarReserva.Parameters.Add("@montoMulta", MySqlDbType.Decimal).Value =
+                montoMulta;
+            actualizarReserva.Parameters.Add("@idUsuarioTerminador", MySqlDbType.Int32).Value =
+                idUsuarioTerminador;
+            actualizarReserva.Parameters.Add("@idReserva", MySqlDbType.Int32).Value =
+                idReserva;
+
+            if (actualizarReserva.ExecuteNonQuery() != 1)
+            {
+                transaction.Rollback();
+                return false;
+            }
+
+            using var registrarPago = connection.CreateCommand();
+            registrarPago.Transaction = transaction;
+            registrarPago.CommandText = """
+                INSERT INTO Pagos
+                    (IdReserva, Concepto, FechaPago, Importe, Anulado,
+                     IdUsuarioCreador, IdUsuarioAnulador, FechaAnulacion)
+                VALUES
+                    (@idReserva, @concepto, @fechaPago, @importe, 0,
+                     @idUsuarioCreador, NULL, NULL);
+                """;
+            registrarPago.Parameters.Add("@idReserva", MySqlDbType.Int32).Value = idReserva;
+            registrarPago.Parameters.Add("@concepto", MySqlDbType.VarChar, 150).Value =
+                "Multa por terminación anticipada";
+            registrarPago.Parameters.Add("@fechaPago", MySqlDbType.Date).Value = DateTime.Today;
+            registrarPago.Parameters.Add("@importe", MySqlDbType.Decimal).Value = montoMulta;
+            registrarPago.Parameters.Add("@idUsuarioCreador", MySqlDbType.Int32).Value =
+                idUsuarioTerminador;
+            registrarPago.ExecuteNonQuery();
+
+            transaction.Commit();
+            return true;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
     }
 
     public bool Modificacion(Reserva reserva)
@@ -295,6 +380,7 @@ public class RepositorioReservas : RepositorioBase
         var imagenOrdinal = reader.GetOrdinal(nameof(Inmueble.ImagenPortada));
         var propietarioTelefonoOrdinal = reader.GetOrdinal("PropietarioTelefono");
         var inquilinoTelefonoOrdinal = reader.GetOrdinal("InquilinoTelefono");
+        var terminadorOrdinal = reader.GetOrdinal(nameof(Reserva.IdUsuarioTerminador));
 
         return new Reserva
         {
@@ -310,6 +396,10 @@ public class RepositorioReservas : RepositorioBase
             MontoMulta = reader.IsDBNull(multaOrdinal)
                 ? null
                 : reader.GetDecimal(multaOrdinal),
+            IdUsuarioCreador = reader.GetInt32(nameof(Reserva.IdUsuarioCreador)),
+            IdUsuarioTerminador = reader.IsDBNull(terminadorOrdinal)
+                ? null
+                : reader.GetInt32(terminadorOrdinal),
             Inmueble = new Inmueble
             {
                 IdInmueble = reader.GetInt32(nameof(Reserva.IdInmueble)),
@@ -350,7 +440,26 @@ public class RepositorioReservas : RepositorioBase
                     ? null
                     : reader.GetString(inquilinoTelefonoOrdinal),
                 Email = reader.GetString("InquilinoEmail")
-            }
+            },
+            UsuarioCreador = MapearUsuario(reader, "Creador", "IdUsuarioCreador"),
+            UsuarioTerminador = reader.IsDBNull(terminadorOrdinal)
+                ? null
+                : MapearUsuario(reader, "Terminador", "IdUsuarioTerminador")
         };
     }
+
+    private static Usuario MapearUsuario(
+        MySqlDataReader reader,
+        string prefijo,
+        string columnaId) => new()
+    {
+        IdUsuario = reader.GetInt32(columnaId),
+        Nombre = reader.GetString($"{prefijo}Nombre"),
+        Apellido = reader.GetString($"{prefijo}Apellido"),
+        Email = reader.GetString($"{prefijo}Email"),
+        Rol = reader.GetString($"{prefijo}Rol"),
+        Avatar = reader.IsDBNull(reader.GetOrdinal($"{prefijo}Avatar"))
+            ? null
+            : reader.GetString($"{prefijo}Avatar")
+    };
 }

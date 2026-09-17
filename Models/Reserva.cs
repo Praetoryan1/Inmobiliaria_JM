@@ -40,9 +40,17 @@ public class Reserva : IValidatableObject
     [Display(Name = "Monto de multa")]
     public decimal? MontoMulta { get; set; }
 
+    public int IdUsuarioCreador { get; set; }
+
+    public int? IdUsuarioTerminador { get; set; }
+
     public Inmueble? Inmueble { get; set; }
 
     public Inquilino? Inquilino { get; set; }
+
+    public Usuario? UsuarioCreador { get; set; }
+
+    public Usuario? UsuarioTerminador { get; set; }
 
     public string Estado
     {

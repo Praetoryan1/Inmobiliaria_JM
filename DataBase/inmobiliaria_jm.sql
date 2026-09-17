@@ -46,6 +46,23 @@ CREATE TABLE IF NOT EXISTS Usuarios (
     CONSTRAINT CK_Usuarios_Rol CHECK (Rol IN ('Administrador', 'Empleado'))
 ) ENGINE = InnoDB;
 
+-- Usuario inicial para el primer ingreso.
+-- Email: admin@inmobiliaria.com / Contraseña: Admin123!
+INSERT INTO Usuarios
+    (Nombre, Apellido, Email, PasswordHash, Rol, Avatar)
+SELECT
+    'Administrador',
+    'Inicial',
+    'admin@inmobiliaria.com',
+    'AQAAAAIAAYagAAAAEOXu1Rn+bA508Ro1MmnYf9YLj22J+/E9Qyzz1ceoBYtVa9/ERuWr1gVzeR5sSQ8Wuw==',
+    'Administrador',
+    NULL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Usuarios
+    WHERE Email = 'admin@inmobiliaria.com'
+);
+
 CREATE TABLE IF NOT EXISTS TiposInmueble (
     IdTipoInmueble INT UNSIGNED NOT NULL AUTO_INCREMENT,
     Nombre VARCHAR(80) NOT NULL,
@@ -85,6 +102,8 @@ CREATE TABLE IF NOT EXISTS Reservas (
     MontoDia DECIMAL(12, 2) NOT NULL,
     FechaTerminacionAnticipada DATE NULL,
     MontoMulta DECIMAL(12, 2) NULL,
+    IdUsuarioCreador INT UNSIGNED NOT NULL,
+    IdUsuarioTerminador INT UNSIGNED NULL,
     CONSTRAINT PK_Reservas PRIMARY KEY (IdReserva),
     CONSTRAINT FK_Reservas_Inmuebles FOREIGN KEY (IdInmueble)
         REFERENCES Inmuebles (IdInmueble)
@@ -94,11 +113,101 @@ CREATE TABLE IF NOT EXISTS Reservas (
         REFERENCES Inquilinos (IdInquilino)
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
+    CONSTRAINT FK_Reservas_UsuarioCreador FOREIGN KEY (IdUsuarioCreador)
+        REFERENCES Usuarios (IdUsuario)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT FK_Reservas_UsuarioTerminador FOREIGN KEY (IdUsuarioTerminador)
+        REFERENCES Usuarios (IdUsuario)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
     CONSTRAINT CK_Reservas_Fechas CHECK (FechaHasta > FechaDesde),
     CONSTRAINT CK_Reservas_MontoDia CHECK (MontoDia > 0),
     CONSTRAINT CK_Reservas_MontoMulta CHECK (MontoMulta IS NULL OR MontoMulta >= 0),
+    CONSTRAINT CK_Reservas_Terminacion CHECK (
+        (FechaTerminacionAnticipada IS NULL
+            AND MontoMulta IS NULL
+            AND IdUsuarioTerminador IS NULL)
+        OR
+        (FechaTerminacionAnticipada IS NOT NULL
+            AND MontoMulta IS NOT NULL
+            AND IdUsuarioTerminador IS NOT NULL)
+    ),
     INDEX IX_Reservas_Inmueble_Fechas (IdInmueble, FechaDesde, FechaHasta)
 ) ENGINE = InnoDB;
+
+-- Actualiza instalaciones creadas antes de incorporar la auditoría de reservas.
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Reservas'
+          AND COLUMN_NAME = 'IdUsuarioCreador'
+    ),
+    'DO 0',
+    'ALTER TABLE Reservas ADD COLUMN IdUsuarioCreador INT UNSIGNED NULL AFTER MontoMulta'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
+
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Reservas'
+          AND COLUMN_NAME = 'IdUsuarioTerminador'
+    ),
+    'DO 0',
+    'ALTER TABLE Reservas ADD COLUMN IdUsuarioTerminador INT UNSIGNED NULL AFTER IdUsuarioCreador'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
+
+UPDATE Reservas
+SET IdUsuarioCreador = (
+    SELECT IdUsuario
+    FROM Usuarios
+    WHERE Email = 'admin@inmobiliaria.com'
+    LIMIT 1
+)
+WHERE IdUsuarioCreador IS NULL;
+
+ALTER TABLE Reservas
+    MODIFY IdUsuarioCreador INT UNSIGNED NOT NULL;
+
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
+        WHERE CONSTRAINT_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Reservas'
+          AND CONSTRAINT_NAME = 'FK_Reservas_UsuarioCreador'
+    ),
+    'DO 0',
+    'ALTER TABLE Reservas ADD CONSTRAINT FK_Reservas_UsuarioCreador FOREIGN KEY (IdUsuarioCreador) REFERENCES Usuarios (IdUsuario) ON UPDATE CASCADE ON DELETE RESTRICT'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
+
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
+        WHERE CONSTRAINT_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Reservas'
+          AND CONSTRAINT_NAME = 'FK_Reservas_UsuarioTerminador'
+    ),
+    'DO 0',
+    'ALTER TABLE Reservas ADD CONSTRAINT FK_Reservas_UsuarioTerminador FOREIGN KEY (IdUsuarioTerminador) REFERENCES Usuarios (IdUsuario) ON UPDATE CASCADE ON DELETE RESTRICT'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
 
 CREATE TABLE IF NOT EXISTS Pagos (
     IdPago INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -142,23 +251,6 @@ INSERT IGNORE INTO Inquilinos (Dni, Nombre, Apellido, Telefono, Email)
 VALUES
     ('30111222', 'María', 'López', '2664111222', 'maria.lopez@example.com'),
     ('33444555', 'Juan', 'Sosa', '2664444555', 'juan.sosa@example.com');
-
--- Usuario inicial para el primer ingreso.
--- Email: admin@inmobiliaria.com / Contraseña: Admin123!
-INSERT INTO Usuarios
-    (Nombre, Apellido, Email, PasswordHash, Rol, Avatar)
-SELECT
-    'Administrador',
-    'Inicial',
-    'admin@inmobiliaria.com',
-    'AQAAAAIAAYagAAAAEOXu1Rn+bA508Ro1MmnYf9YLj22J+/E9Qyzz1ceoBYtVa9/ERuWr1gVzeR5sSQ8Wuw==',
-    'Administrador',
-    NULL
-WHERE NOT EXISTS (
-    SELECT 1
-    FROM Usuarios
-    WHERE Email = 'admin@inmobiliaria.com'
-);
 
 INSERT IGNORE INTO TiposInmueble (Nombre)
 VALUES
@@ -211,7 +303,8 @@ WHERE p.Dni = '22987654'
 
 INSERT INTO Reservas
     (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
-     FechaTerminacionAnticipada, MontoMulta)
+     FechaTerminacionAnticipada, MontoMulta,
+     IdUsuarioCreador, IdUsuarioTerminador)
 SELECT
     i.IdInmueble,
     iq.IdInquilino,
@@ -219,9 +312,12 @@ SELECT
     '2026-10-15',
     i.PrecioDia,
     NULL,
+    NULL,
+    u.IdUsuario,
     NULL
 FROM Inmuebles i
 INNER JOIN Inquilinos iq ON iq.Dni = '30111222'
+INNER JOIN Usuarios u ON u.Email = 'admin@inmobiliaria.com'
 WHERE i.Direccion = 'Av. Illia 125, San Luis'
   AND NOT EXISTS (
       SELECT 1

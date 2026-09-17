@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Security.Claims;
 using inmobiliaria.Models;
 using inmobiliaria.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -85,9 +87,15 @@ public class ReservasController : Controller
             return View(reserva);
         }
 
+        var idUsuario = ObtenerIdUsuarioActual();
+        if (!idUsuario.HasValue)
+        {
+            return Unauthorized();
+        }
+
         try
         {
-            repositorio.Alta(reserva);
+            repositorio.Alta(reserva, idUsuario.Value);
         }
         catch (MySqlException exception) when (exception.Number == 1452)
         {
@@ -119,6 +127,12 @@ public class ReservasController : Controller
             return NotFound();
         }
 
+        if (reserva.FechaTerminacionAnticipada.HasValue)
+        {
+            TempData["Error"] = "Una reserva terminada anticipadamente no puede modificarse.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
         PrepararFormulario(reserva);
         return View(reserva);
     }
@@ -139,6 +153,12 @@ public class ReservasController : Controller
         if (reservaActual is null)
         {
             return NotFound();
+        }
+
+        if (reservaActual.FechaTerminacionAnticipada.HasValue)
+        {
+            TempData["Error"] = "Una reserva terminada anticipadamente no puede modificarse.";
+            return RedirectToAction(nameof(Details), new { id });
         }
 
         ValidarRelacionesYDisponibilidad(reserva, id, reservaActual.IdInmueble);
@@ -178,6 +198,112 @@ public class ReservasController : Controller
 
         TempData["Mensaje"] = "La reserva se actualizó correctamente.";
         return RedirectToAction(nameof(Index));
+    }
+
+    public IActionResult Terminacion(int id, DateTime? fechaTerminacion = null)
+    {
+        var reserva = repositorio.ObtenerPorId(id);
+        if (reserva is null)
+        {
+            return NotFound();
+        }
+
+        var fechaMinima = ObtenerFechaMinimaTerminacion(reserva);
+        var fechaMaxima = reserva.FechaHasta.Date.AddDays(-1);
+        if (reserva.FechaTerminacionAnticipada.HasValue)
+        {
+            TempData["Error"] = "La reserva ya posee una terminación anticipada.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        if (fechaMinima > fechaMaxima)
+        {
+            TempData["Error"] = "La reserva ya finalizó y no puede terminarse anticipadamente.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var fechaSeleccionada = fechaTerminacion?.Date ?? fechaMinima;
+        if (fechaSeleccionada < fechaMinima || fechaSeleccionada > fechaMaxima)
+        {
+            TempData["Error"] =
+                $"La fecha debe estar comprendida entre {fechaMinima:dd/MM/yyyy} y {fechaMaxima:dd/MM/yyyy}.";
+            return RedirectToAction(nameof(Terminacion), new { id });
+        }
+
+        ViewBag.FechaMinima = fechaMinima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        ViewBag.FechaMaxima = fechaMaxima.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        return View(CalcularTerminacion(reserva, fechaSeleccionada));
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Terminacion(TerminacionReservaViewModel modelo)
+    {
+        var reserva = repositorio.ObtenerPorId(modelo.IdReserva);
+        if (reserva is null)
+        {
+            return NotFound();
+        }
+
+        var fechaMinima = ObtenerFechaMinimaTerminacion(reserva);
+        var fechaMaxima = reserva.FechaHasta.Date.AddDays(-1);
+        if (reserva.FechaTerminacionAnticipada.HasValue)
+        {
+            TempData["Error"] = "La reserva ya posee una terminación anticipada.";
+            return RedirectToAction(nameof(Details), new { id = reserva.IdReserva });
+        }
+
+        if (fechaMinima > fechaMaxima
+            || modelo.FechaTerminacion.Date < fechaMinima
+            || modelo.FechaTerminacion.Date > fechaMaxima)
+        {
+            TempData["Error"] = "La fecha indicada no es válida para esta reserva.";
+            return RedirectToAction(nameof(Terminacion), new { id = reserva.IdReserva });
+        }
+
+        var idUsuario = ObtenerIdUsuarioActual();
+        if (!idUsuario.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var calculo = CalcularTerminacion(reserva, modelo.FechaTerminacion.Date);
+        try
+        {
+            if (!repositorio.TerminarAnticipadamente(
+                reserva.IdReserva,
+                calculo.FechaTerminacion,
+                calculo.MontoMulta,
+                idUsuario.Value))
+            {
+                TempData["Error"] = "La reserva ya había sido terminada por otro usuario.";
+                return RedirectToAction(nameof(Details), new { id = reserva.IdReserva });
+            }
+        }
+        catch (MySqlException exception) when (exception.Number == 1452)
+        {
+            logger.LogError(
+                exception,
+                "Error de relación al terminar la reserva {IdReserva}.",
+                reserva.IdReserva);
+            TempData["Error"] =
+                "No se pudo registrar la terminación porque cambió un dato relacionado.";
+            return RedirectToAction(nameof(Terminacion), new { id = reserva.IdReserva });
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Error al terminar anticipadamente la reserva {IdReserva}.",
+                reserva.IdReserva);
+            TempData["Error"] =
+                "No se pudo completar la terminación anticipada. Intente nuevamente.";
+            return RedirectToAction(nameof(Terminacion), new { id = reserva.IdReserva });
+        }
+
+        TempData["Mensaje"] =
+            "La reserva se terminó anticipadamente y la multa quedó registrada como pago.";
+        return RedirectToAction(nameof(Details), new { id = reserva.IdReserva });
     }
 
     [Authorize(Roles = RolesUsuario.Administrador)]
@@ -316,4 +442,45 @@ public class ReservasController : Controller
         !string.IsNullOrWhiteSpace(estado) && EstadosPermitidos.Contains(estado)
             ? estado.ToLowerInvariant()
             : null;
+
+    private static DateTime ObtenerFechaMinimaTerminacion(Reserva reserva) =>
+        DateTime.Today > reserva.FechaDesde.Date
+            ? DateTime.Today
+            : reserva.FechaDesde.Date;
+
+    private static TerminacionReservaViewModel CalcularTerminacion(
+        Reserva reserva,
+        DateTime fechaTerminacion)
+    {
+        var diasOriginales = (reserva.FechaHasta.Date - reserva.FechaDesde.Date).Days;
+        var diasCumplidos = Math.Max(
+            0,
+            (fechaTerminacion.Date - reserva.FechaDesde.Date).Days);
+        var diasRestantes = (reserva.FechaHasta.Date - fechaTerminacion.Date).Days;
+        var porcentaje = diasCumplidos < diasOriginales / 2m ? 0.50m : 0.25m;
+        var montoMulta = decimal.Round(
+            diasRestantes * reserva.MontoDia * porcentaje,
+            2,
+            MidpointRounding.AwayFromZero);
+
+        return new TerminacionReservaViewModel
+        {
+            IdReserva = reserva.IdReserva,
+            FechaTerminacion = fechaTerminacion.Date,
+            Reserva = reserva,
+            DiasOriginales = diasOriginales,
+            DiasCumplidos = diasCumplidos,
+            DiasRestantes = diasRestantes,
+            PorcentajeMulta = porcentaje,
+            MontoMulta = montoMulta
+        };
+    }
+
+    private int? ObtenerIdUsuarioActual()
+    {
+        var valor = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        return int.TryParse(valor, NumberStyles.None, CultureInfo.InvariantCulture, out var id)
+            ? id
+            : null;
+    }
 }
