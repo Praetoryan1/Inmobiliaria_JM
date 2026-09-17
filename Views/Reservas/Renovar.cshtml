@@ -1,0 +1,89 @@
+@model RenovacionReservaViewModel
+
+@{
+    ViewData["Title"] = "Renovar reserva";
+    var finEfectivo = Model.ReservaOrigen.FechaTerminacionAnticipada
+        ?? Model.ReservaOrigen.FechaHasta;
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="mb-4">
+            <h1 class="h2 mb-1">Renovar reserva</h1>
+            <p class="text-secondary mb-0">
+                Se creará una nueva reserva sin modificar la Nº @Model.IdReservaOrigen.
+            </p>
+        </div>
+
+        <div class="card app-card mb-4">
+            <div class="card-body p-4">
+                <h2 class="h5 mb-3">Datos que se conservarán</h2>
+                <dl class="row mb-0 app-details">
+                    <dt class="col-sm-4">Inmueble</dt>
+                    <dd class="col-sm-8">
+                        @Model.ReservaOrigen.Inmueble?.Direccion
+                        <span class="text-secondary">
+                            · @Model.ReservaOrigen.Inmueble?.TipoInmueble?.Nombre
+                        </span>
+                    </dd>
+                    <dt class="col-sm-4">Inquilino</dt>
+                    <dd class="col-sm-8">
+                        @Model.ReservaOrigen.Inquilino?.Apellido,
+                        @Model.ReservaOrigen.Inquilino?.Nombre
+                        <span class="text-secondary">
+                            · DNI @Model.ReservaOrigen.Inquilino?.Dni
+                        </span>
+                    </dd>
+                    <dt class="col-sm-4">Finalización efectiva anterior</dt>
+                    <dd class="col-sm-8">@finEfectivo.ToString("dd/MM/yyyy")</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="card app-card">
+            <div class="card-body p-4">
+                <form asp-action="Renovar" method="post">
+                    <input asp-for="IdReservaOrigen" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label asp-for="FechaDesde" class="form-label"></label>
+                            <input asp-for="FechaDesde" class="form-control" type="date"
+                                   min="@finEfectivo.AddDays(1).ToString("yyyy-MM-dd")" />
+                            <span asp-validation-for="FechaDesde" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="FechaHasta" class="form-label"></label>
+                            <input asp-for="FechaHasta" class="form-control" type="date" />
+                            <span asp-validation-for="FechaHasta" class="text-danger small"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="MontoDia" class="form-label"></label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                <input asp-for="MontoDia" class="form-control" type="number"
+                                       min="0.01" step="0.01" />
+                            </div>
+                            <span asp-validation-for="MontoDia" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info mt-4 mb-0" role="alert">
+                        Antes de guardar se comprobará nuevamente que el inmueble no esté ocupado
+                        durante las nuevas fechas.
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-action="Details" asp-route-id="@Model.IdReservaOrigen"
+                           class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Crear renovación</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

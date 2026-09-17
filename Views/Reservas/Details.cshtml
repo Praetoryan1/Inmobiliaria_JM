@@ -21,9 +21,14 @@
                 <h1 class="h2 mb-1">Detalle de la reserva</h1>
                 <p class="text-secondary mb-0">Información completa del alquiler temporario.</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
                 <a asp-controller="Pagos" asp-action="Index" asp-route-idReserva="@Model.IdReserva"
                    class="btn btn-outline-primary">Ver pagos</a>
+                @if (Model.Inmueble?.Disponible == true)
+                {
+                    <a asp-action="Renovar" asp-route-id="@Model.IdReserva"
+                       class="btn btn-outline-primary">Renovar</a>
+                }
                 @if (!Model.FechaTerminacionAnticipada.HasValue && Model.FechaHasta.Date > DateTime.Today)
                 {
                     <a asp-action="Terminacion" asp-route-id="@Model.IdReserva"
@@ -77,6 +82,15 @@
                     </dd>
                     <dt class="col-sm-4">Estado</dt>
                     <dd class="col-sm-8">@Model.Estado</dd>
+                    @if (Model.IdReservaOrigen.HasValue)
+                    {
+                        <dt class="col-sm-4">Reserva de origen</dt>
+                        <dd class="col-sm-8">
+                            <a asp-action="Details" asp-route-id="@Model.IdReservaOrigen.Value">
+                                Reserva Nº @Model.IdReservaOrigen.Value
+                            </a>
+                        </dd>
+                    }
                 </dl>
             </div>
         </div>

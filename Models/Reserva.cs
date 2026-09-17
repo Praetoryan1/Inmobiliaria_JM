@@ -44,6 +44,8 @@ public class Reserva : IValidatableObject
 
     public int? IdUsuarioTerminador { get; set; }
 
+    public int? IdReservaOrigen { get; set; }
+
     public Inmueble? Inmueble { get; set; }
 
     public Inquilino? Inquilino { get; set; }

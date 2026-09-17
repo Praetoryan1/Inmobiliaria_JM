@@ -16,6 +16,7 @@ public class RepositorioReservas : RepositorioBase
         r.MontoMulta,
         r.IdUsuarioCreador,
         r.IdUsuarioTerminador,
+        r.IdReservaOrigen,
         i.IdPropietario,
         i.IdTipoInmueble,
         i.Direccion,
@@ -199,7 +200,10 @@ public class RepositorioReservas : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar()) == 1;
     }
 
-    public int Alta(Reserva reserva, int idUsuarioCreador)
+    public int Alta(
+        Reserva reserva,
+        int idUsuarioCreador,
+        int? idReservaOrigen = null)
     {
         ArgumentNullException.ThrowIfNull(reserva);
 
@@ -210,15 +214,17 @@ public class RepositorioReservas : RepositorioBase
             INSERT INTO Reservas
                 (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
                  FechaTerminacionAnticipada, MontoMulta,
-                 IdUsuarioCreador, IdUsuarioTerminador)
+                 IdUsuarioCreador, IdUsuarioTerminador, IdReservaOrigen)
             VALUES
                 (@idInmueble, @idInquilino, @fechaDesde, @fechaHasta, @montoDia,
-                 NULL, NULL, @idUsuarioCreador, NULL);
+                 NULL, NULL, @idUsuarioCreador, NULL, @idReservaOrigen);
             SELECT LAST_INSERT_ID();
             """;
         AgregarParametrosReserva(command, reserva);
         command.Parameters.Add("@idUsuarioCreador", MySqlDbType.Int32).Value =
             idUsuarioCreador;
+        command.Parameters.Add("@idReservaOrigen", MySqlDbType.Int32).Value =
+            idReservaOrigen.HasValue ? idReservaOrigen.Value : DBNull.Value;
 
         connection.Open();
         reserva.IdReserva = Convert.ToInt32(command.ExecuteScalar());
@@ -400,6 +406,9 @@ public class RepositorioReservas : RepositorioBase
             IdUsuarioTerminador = reader.IsDBNull(terminadorOrdinal)
                 ? null
                 : reader.GetInt32(terminadorOrdinal),
+            IdReservaOrigen = reader.IsDBNull(reader.GetOrdinal(nameof(Reserva.IdReservaOrigen)))
+                ? null
+                : reader.GetInt32(nameof(Reserva.IdReservaOrigen)),
             Inmueble = new Inmueble
             {
                 IdInmueble = reader.GetInt32(nameof(Reserva.IdInmueble)),

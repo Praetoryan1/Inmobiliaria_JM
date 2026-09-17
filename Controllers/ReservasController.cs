@@ -200,6 +200,126 @@ public class ReservasController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    public IActionResult Renovar(int id)
+    {
+        var reserva = repositorio.ObtenerPorId(id);
+        if (reserva is null)
+        {
+            return NotFound();
+        }
+
+        if (reserva.Inmueble is null || !reserva.Inmueble.Disponible)
+        {
+            TempData["Error"] =
+                "No se puede renovar porque la oferta del inmueble está suspendida.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        var finEfectivo = reserva.FechaTerminacionAnticipada?.Date
+            ?? reserva.FechaHasta.Date;
+        return View(new RenovacionReservaViewModel
+        {
+            IdReservaOrigen = reserva.IdReserva,
+            FechaDesde = finEfectivo.AddDays(1),
+            FechaHasta = finEfectivo.AddDays(2),
+            MontoDia = reserva.Inmueble.PrecioDia,
+            ReservaOrigen = reserva
+        });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public IActionResult Renovar(RenovacionReservaViewModel modelo)
+    {
+        var reservaOrigen = repositorio.ObtenerPorId(modelo.IdReservaOrigen);
+        if (reservaOrigen is null)
+        {
+            return NotFound();
+        }
+
+        modelo.ReservaOrigen = reservaOrigen;
+        var finEfectivo = reservaOrigen.FechaTerminacionAnticipada?.Date
+            ?? reservaOrigen.FechaHasta.Date;
+        if (modelo.FechaDesde.Date <= finEfectivo)
+        {
+            ModelState.AddModelError(
+                nameof(RenovacionReservaViewModel.FechaDesde),
+                $"La renovación debe comenzar después del {finEfectivo:dd/MM/yyyy}.");
+        }
+
+        if (reservaOrigen.Inmueble is null || !reservaOrigen.Inmueble.Disponible)
+        {
+            ModelState.AddModelError(
+                string.Empty,
+                "No se puede renovar porque la oferta del inmueble está suspendida.");
+        }
+
+        if (modelo.FechaHasta.Date > modelo.FechaDesde.Date
+            && repositorio.ExisteSuperposicion(
+                reservaOrigen.IdInmueble,
+                modelo.FechaDesde,
+                modelo.FechaHasta))
+        {
+            ModelState.AddModelError(
+                nameof(RenovacionReservaViewModel.FechaHasta),
+                "El inmueble ya posee otra reserva que se superpone con esas fechas.");
+        }
+
+        if (!ModelState.IsValid)
+        {
+            return View(modelo);
+        }
+
+        var idUsuario = ObtenerIdUsuarioActual();
+        if (!idUsuario.HasValue)
+        {
+            return Unauthorized();
+        }
+
+        var nuevaReserva = new Reserva
+        {
+            IdInmueble = reservaOrigen.IdInmueble,
+            IdInquilino = reservaOrigen.IdInquilino,
+            FechaDesde = modelo.FechaDesde.Date,
+            FechaHasta = modelo.FechaHasta.Date,
+            MontoDia = modelo.MontoDia
+        };
+
+        try
+        {
+            repositorio.Alta(
+                nuevaReserva,
+                idUsuario.Value,
+                reservaOrigen.IdReserva);
+        }
+        catch (MySqlException exception) when (exception.Number == 1452)
+        {
+            logger.LogError(
+                exception,
+                "Error de relación al renovar la reserva {IdReserva}.",
+                reservaOrigen.IdReserva);
+            ModelState.AddModelError(
+                string.Empty,
+                "No se pudo renovar porque cambió un dato relacionado.");
+            return View(modelo);
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(
+                exception,
+                "Error al renovar la reserva {IdReserva}.",
+                reservaOrigen.IdReserva);
+            ModelState.AddModelError(
+                string.Empty,
+                "No se pudo crear la renovación. Intente nuevamente.");
+            return View(modelo);
+        }
+
+        TempData["Mensaje"] =
+            $"La renovación se creó como una nueva reserva Nº {nuevaReserva.IdReserva}.";
+        return RedirectToAction(nameof(Details), new { id = nuevaReserva.IdReserva });
+    }
+
     public IActionResult Terminacion(int id, DateTime? fechaTerminacion = null)
     {
         var reserva = repositorio.ObtenerPorId(id);

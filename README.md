@@ -76,6 +76,7 @@ classDiagram
         +decimal MontoMulta
         +int IdUsuarioCreador
         +int IdUsuarioTerminador
+        +int IdReservaOrigen
     }
 
     class Pago {
@@ -109,6 +110,7 @@ classDiagram
     Usuario "0..1" --> "0..*" Pago : anula
     Usuario "1" --> "0..*" Reserva : crea
     Usuario "0..1" --> "0..*" Reserva : termina
+    Reserva "0..1" --> "0..*" Reserva : origina renovación
 ```
 
 </details>
@@ -131,13 +133,15 @@ Esta versión contiene:
 * Terminación anticipada con cálculo del 50% o 25% del alquiler restante.
 * Registro obligatorio y atómico del pago de la multa al terminar una reserva.
 * Auditoría del usuario que creó y del usuario que terminó cada reserva.
+* Renovación mediante una nueva reserva con el mismo inmueble e inquilino.
+* Validación de disponibilidad y vínculo con la reserva de origen.
 * Búsquedas y listados paginados con un máximo de 10 registros por página.
 * Filtro de inmuebles por disponibilidad y filtro de reservas por estado.
 * Validaciones en el navegador y en el servidor.
 * Control de fechas y prevención de reservas superpuestas para un mismo inmueble.
 * Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
 
-Las renovaciones, imágenes adicionales e informes se incorporarán en los siguientes incrementos de la entrega final.
+Las imágenes adicionales e informes se incorporarán en los siguientes incrementos de la entrega final.
 
 ---
 

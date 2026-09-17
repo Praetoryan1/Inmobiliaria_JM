@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS Reservas (
     MontoMulta DECIMAL(12, 2) NULL,
     IdUsuarioCreador INT UNSIGNED NOT NULL,
     IdUsuarioTerminador INT UNSIGNED NULL,
+    IdReservaOrigen INT UNSIGNED NULL,
     CONSTRAINT PK_Reservas PRIMARY KEY (IdReserva),
     CONSTRAINT FK_Reservas_Inmuebles FOREIGN KEY (IdInmueble)
         REFERENCES Inmuebles (IdInmueble)
@@ -119,6 +120,10 @@ CREATE TABLE IF NOT EXISTS Reservas (
         ON DELETE RESTRICT,
     CONSTRAINT FK_Reservas_UsuarioTerminador FOREIGN KEY (IdUsuarioTerminador)
         REFERENCES Usuarios (IdUsuario)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT FK_Reservas_ReservaOrigen FOREIGN KEY (IdReservaOrigen)
+        REFERENCES Reservas (IdReserva)
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
     CONSTRAINT CK_Reservas_Fechas CHECK (FechaHasta > FechaDesde),
@@ -204,6 +209,36 @@ SET @sql = IF(
     ),
     'DO 0',
     'ALTER TABLE Reservas ADD CONSTRAINT FK_Reservas_UsuarioTerminador FOREIGN KEY (IdUsuarioTerminador) REFERENCES Usuarios (IdUsuario) ON UPDATE CASCADE ON DELETE RESTRICT'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
+
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Reservas'
+          AND COLUMN_NAME = 'IdReservaOrigen'
+    ),
+    'DO 0',
+    'ALTER TABLE Reservas ADD COLUMN IdReservaOrigen INT UNSIGNED NULL AFTER IdUsuarioTerminador'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
+
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.REFERENTIAL_CONSTRAINTS
+        WHERE CONSTRAINT_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Reservas'
+          AND CONSTRAINT_NAME = 'FK_Reservas_ReservaOrigen'
+    ),
+    'DO 0',
+    'ALTER TABLE Reservas ADD CONSTRAINT FK_Reservas_ReservaOrigen FOREIGN KEY (IdReservaOrigen) REFERENCES Reservas (IdReserva) ON UPDATE CASCADE ON DELETE RESTRICT'
 );
 PREPARE sentencia FROM @sql;
 EXECUTE sentencia;
@@ -304,7 +339,7 @@ WHERE p.Dni = '22987654'
 INSERT INTO Reservas
     (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
      FechaTerminacionAnticipada, MontoMulta,
-     IdUsuarioCreador, IdUsuarioTerminador)
+     IdUsuarioCreador, IdUsuarioTerminador, IdReservaOrigen)
 SELECT
     i.IdInmueble,
     iq.IdInquilino,
@@ -314,6 +349,7 @@ SELECT
     NULL,
     NULL,
     u.IdUsuario,
+    NULL,
     NULL
 FROM Inmuebles i
 INNER JOIN Inquilinos iq ON iq.Dni = '30111222'
