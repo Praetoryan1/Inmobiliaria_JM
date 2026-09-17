@@ -61,6 +61,7 @@ classDiagram
         +int Cupo
         +string Coordenadas
         +decimal PrecioDia
+        +decimal PorcentajeReserva
         +bool Disponible
         +string ImagenPortada
     }
@@ -135,6 +136,8 @@ Esta versión contiene:
 * Auditoría del usuario que creó y del usuario que terminó cada reserva.
 * Renovación mediante una nueva reserva con el mismo inmueble e inquilino.
 * Validación de disponibilidad y vínculo con la reserva de origen.
+* Porcentaje de pago inicial configurable para cada inmueble.
+* Creación atómica de la reserva y de su pago inicial obligatorio.
 * Búsquedas y listados paginados con un máximo de 10 registros por página.
 * Filtro de inmuebles por disponibilidad y filtro de reservas por estado.
 * Validaciones en el navegador y en el servidor.

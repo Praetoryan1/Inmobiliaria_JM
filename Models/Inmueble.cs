@@ -36,6 +36,12 @@ public class Inmueble
         ErrorMessage = "El precio por día debe ser mayor que cero.")]
     public decimal PrecioDia { get; set; }
 
+    [Required(ErrorMessage = "El porcentaje de reserva es obligatorio.")]
+    [Display(Name = "Porcentaje de pago inicial")]
+    [Range(typeof(decimal), "1", "100",
+        ErrorMessage = "El porcentaje debe estar entre 1 y 100.")]
+    public decimal PorcentajeReserva { get; set; } = 20m;
+
     public bool Disponible { get; set; } = true;
 
     [Display(Name = "Imagen de portada")]

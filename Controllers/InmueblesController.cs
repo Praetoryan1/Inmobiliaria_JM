@@ -66,13 +66,17 @@ public class InmueblesController : Controller
     public IActionResult Create()
     {
         PrepararFormulario();
-        return View(new Inmueble { Disponible = true });
+        return View(new Inmueble
+        {
+            Disponible = true,
+            PorcentajeReserva = 20m
+        });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(
-        [Bind("IdPropietario,IdTipoInmueble,Direccion,Cupo,Coordenadas,PrecioDia,Disponible,ImagenArchivo")]
+        [Bind("IdPropietario,IdTipoInmueble,Direccion,Cupo,Coordenadas,PrecioDia,PorcentajeReserva,Disponible,ImagenArchivo")]
         Inmueble inmueble)
     {
         ValidarImagen(inmueble.ImagenArchivo);
@@ -133,7 +137,7 @@ public class InmueblesController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(
         int id,
-        [Bind("IdInmueble,IdPropietario,IdTipoInmueble,Direccion,Cupo,Coordenadas,PrecioDia,Disponible,ImagenArchivo")]
+        [Bind("IdInmueble,IdPropietario,IdTipoInmueble,Direccion,Cupo,Coordenadas,PrecioDia,PorcentajeReserva,Disponible,ImagenArchivo")]
         Inmueble inmueble)
     {
         if (id != inmueble.IdInmueble)

@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS Inmuebles (
     Cupo INT UNSIGNED NOT NULL,
     Coordenadas VARCHAR(100) NOT NULL,
     PrecioDia DECIMAL(12, 2) NOT NULL,
+    PorcentajeReserva DECIMAL(5, 2) NOT NULL DEFAULT 20.00,
     Disponible TINYINT(1) NOT NULL DEFAULT 1,
     ImagenPortada VARCHAR(255) NULL,
     CONSTRAINT PK_Inmuebles PRIMARY KEY (IdInmueble),
@@ -90,8 +91,30 @@ CREATE TABLE IF NOT EXISTS Inmuebles (
         ON UPDATE CASCADE
         ON DELETE RESTRICT,
     CONSTRAINT CK_Inmuebles_Cupo CHECK (Cupo > 0),
-    CONSTRAINT CK_Inmuebles_PrecioDia CHECK (PrecioDia > 0)
+    CONSTRAINT CK_Inmuebles_PrecioDia CHECK (PrecioDia > 0),
+    CONSTRAINT CK_Inmuebles_PorcentajeReserva CHECK (
+        PorcentajeReserva BETWEEN 1 AND 100
+    )
 ) ENGINE = InnoDB;
+
+-- Actualiza instalaciones creadas antes de incorporar el pago inicial.
+SET @sql = IF(
+    EXISTS (
+        SELECT 1
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'Inmuebles'
+          AND COLUMN_NAME = 'PorcentajeReserva'
+    ),
+    'DO 0',
+    'ALTER TABLE Inmuebles ADD COLUMN PorcentajeReserva DECIMAL(5, 2) NOT NULL DEFAULT 20.00 AFTER PrecioDia'
+);
+PREPARE sentencia FROM @sql;
+EXECUTE sentencia;
+DEALLOCATE PREPARE sentencia;
+
+ALTER TABLE Inmuebles
+    MODIFY PorcentajeReserva DECIMAL(5, 2) NOT NULL DEFAULT 20.00;
 
 CREATE TABLE IF NOT EXISTS Reservas (
     IdReserva INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -362,4 +385,44 @@ WHERE i.Direccion = 'Av. Illia 125, San Luis'
         AND r.IdInquilino = iq.IdInquilino
         AND r.FechaDesde = '2026-10-10'
         AND r.FechaHasta = '2026-10-15'
+  );
+
+INSERT INTO Pagos
+    (IdReserva, Concepto, FechaPago, Importe, Anulado,
+     IdUsuarioCreador, IdUsuarioAnulador, FechaAnulacion)
+SELECT
+    r.IdReserva,
+    CONCAT(
+        'Pago inicial de reserva (',
+        TRIM(TRAILING '.' FROM TRIM(TRAILING '0' FROM i.PorcentajeReserva)),
+        '%)'
+    ),
+    CURDATE(),
+    ROUND(DATEDIFF(r.FechaHasta, r.FechaDesde) * r.MontoDia
+        * i.PorcentajeReserva / 100, 2),
+    0,
+    r.IdUsuarioCreador,
+    NULL,
+    NULL
+FROM Reservas r
+INNER JOIN Inmuebles i ON i.IdInmueble = r.IdInmueble
+WHERE r.IdInmueble = (
+        SELECT IdInmueble
+        FROM Inmuebles
+        WHERE Direccion = 'Av. Illia 125, San Luis'
+        LIMIT 1
+    )
+  AND r.IdInquilino = (
+        SELECT IdInquilino
+        FROM Inquilinos
+        WHERE Dni = '30111222'
+        LIMIT 1
+    )
+  AND r.FechaDesde = '2026-10-10'
+  AND r.FechaHasta = '2026-10-15'
+  AND NOT EXISTS (
+      SELECT 1
+      FROM Pagos pg
+      WHERE pg.IdReserva = r.IdReserva
+        AND pg.Concepto LIKE 'Pago inicial de reserva (%'
   );

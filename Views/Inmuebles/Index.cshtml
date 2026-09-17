@@ -59,6 +59,7 @@
                     <th>Propietario</th>
                     <th>Cupo</th>
                     <th>Precio por día</th>
+                    <th>Pago inicial</th>
                     <th>Estado</th>
                     <th class="text-end">Acciones</th>
                 </tr>
@@ -67,7 +68,7 @@
                 @if (!Model.Any())
                 {
                     <tr>
-                        <td colspan="8" class="text-center text-secondary py-5">
+                        <td colspan="9" class="text-center text-secondary py-5">
                             No se encontraron inmuebles.
                         </td>
                     </tr>
@@ -93,6 +94,7 @@
                             <td>@inmueble.Propietario?.Apellido, @inmueble.Propietario?.Nombre</td>
                             <td>@inmueble.Cupo</td>
                             <td>@inmueble.PrecioDia.ToString("C")</td>
+                            <td>@inmueble.PorcentajeReserva.ToString("0.##")%</td>
                             <td>
                                 @if (inmueble.Disponible)
                                 {

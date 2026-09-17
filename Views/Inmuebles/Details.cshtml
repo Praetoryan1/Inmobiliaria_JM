@@ -50,6 +50,8 @@
                     <dd class="col-sm-8">@Model.Coordenadas</dd>
                     <dt class="col-sm-4">Precio por día</dt>
                     <dd class="col-sm-8">@Model.PrecioDia.ToString("C")</dd>
+                    <dt class="col-sm-4">Pago inicial de la reserva</dt>
+                    <dd class="col-sm-8">@Model.PorcentajeReserva.ToString("0.##")%</dd>
                     <dt class="col-sm-4">Disponibilidad</dt>
                     <dd class="col-sm-8">@(Model.Disponible ? "Disponible para ofrecer" : "Oferta suspendida")</dd>
                     <dt class="col-sm-4">Imagen de portada</dt>

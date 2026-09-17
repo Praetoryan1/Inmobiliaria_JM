@@ -48,6 +48,16 @@
         <span asp-validation-for="MontoDia" class="text-danger small"></span>
         <div class="form-text">Se conserva como valor histórico de esta reserva.</div>
     </div>
+
+    @if (ViewBag.MostrarPagoInicial is true)
+    {
+        <div class="col-12">
+            <div id="pagoInicialInfo" class="alert alert-info mb-0"
+                 data-porcentaje="@ViewBag.PorcentajeReservaSeleccionado">
+                Seleccione un inmueble y complete las fechas para calcular el pago inicial.
+            </div>
+        </div>
+    }
 </div>
 
 <script>
@@ -117,11 +127,51 @@
                 if (!monto.value || Number(monto.value) <= 0) {
                     monto.value = opcion.precioDia;
                 }
+                const pagoInicial = document.getElementById("pagoInicialInfo");
+                if (pagoInicial) {
+                    pagoInicial.dataset.porcentaje = opcion.porcentajeReserva;
+                    actualizarPagoInicial();
+                }
             });
         configurarBuscador(
             "inquilinoBusqueda",
             "IdInquilino",
             "inquilinoResultados",
             "@Url.Action("BuscarInquilinos", "Reservas")");
+
+        const actualizarPagoInicial = () => {
+            const contenedor = document.getElementById("pagoInicialInfo");
+            if (!contenedor) {
+                return;
+            }
+
+            const porcentaje = Number(contenedor.dataset.porcentaje || 0);
+            const fechaDesde = document.getElementById("FechaDesde").value;
+            const fechaHasta = document.getElementById("FechaHasta").value;
+            const montoDia = Number(document.getElementById("MontoDia").value || 0);
+            const inicio = new Date(`${fechaDesde}T00:00:00`);
+            const fin = new Date(`${fechaHasta}T00:00:00`);
+            const dias = Math.round((fin - inicio) / 86400000);
+
+            if (porcentaje <= 0 || montoDia <= 0 || !Number.isFinite(dias) || dias <= 0) {
+                contenedor.textContent =
+                    "Seleccione un inmueble y complete las fechas para calcular el pago inicial.";
+                return;
+            }
+
+            const total = dias * montoDia;
+            const pago = total * porcentaje / 100;
+            const moneda = new Intl.NumberFormat("es-AR", {
+                style: "currency",
+                currency: "ARS"
+            });
+            contenedor.textContent =
+                `Pago inicial obligatorio: ${porcentaje}% de ${moneda.format(total)} = ${moneda.format(pago)}.`;
+        };
+
+        document.getElementById("FechaDesde")?.addEventListener("change", actualizarPagoInicial);
+        document.getElementById("FechaHasta")?.addEventListener("change", actualizarPagoInicial);
+        document.getElementById("MontoDia")?.addEventListener("input", actualizarPagoInicial);
+        actualizarPagoInicial();
     });
 </script>

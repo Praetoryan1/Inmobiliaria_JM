@@ -13,6 +13,7 @@ public class RepositorioInmuebles : RepositorioBase
         i.Cupo,
         i.Coordenadas,
         i.PrecioDia,
+        i.PorcentajeReserva,
         i.Disponible,
         i.ImagenPortada,
         p.Dni AS PropietarioDni,
@@ -130,11 +131,11 @@ public class RepositorioInmuebles : RepositorioBase
 
         command.CommandText = """
             INSERT INTO Inmuebles
-                (IdPropietario, IdTipoInmueble, Direccion, Cupo,
-                 Coordenadas, PrecioDia, Disponible, ImagenPortada)
+                 (IdPropietario, IdTipoInmueble, Direccion, Cupo,
+                 Coordenadas, PrecioDia, PorcentajeReserva, Disponible, ImagenPortada)
             VALUES
                 (@idPropietario, @idTipoInmueble, @direccion, @cupo,
-                 @coordenadas, @precioDia, @disponible, @imagenPortada);
+                 @coordenadas, @precioDia, @porcentajeReserva, @disponible, @imagenPortada);
             SELECT LAST_INSERT_ID();
             """;
         AgregarParametrosInmueble(command, inmueble);
@@ -165,6 +166,7 @@ public class RepositorioInmuebles : RepositorioBase
                 Cupo = @cupo,
                 Coordenadas = @coordenadas,
                 PrecioDia = @precioDia,
+                PorcentajeReserva = @porcentajeReserva,
                 Disponible = @disponible,
                 ImagenPortada = @imagenPortada
             WHERE IdInmueble = @id;
@@ -234,6 +236,8 @@ public class RepositorioInmuebles : RepositorioBase
         command.Parameters.Add("@coordenadas", MySqlDbType.VarChar, 100).Value =
             inmueble.Coordenadas.Trim();
         command.Parameters.Add("@precioDia", MySqlDbType.Decimal).Value = inmueble.PrecioDia;
+        command.Parameters.Add("@porcentajeReserva", MySqlDbType.Decimal).Value =
+            inmueble.PorcentajeReserva;
         command.Parameters.Add("@disponible", MySqlDbType.Byte).Value = inmueble.Disponible;
         command.Parameters.Add("@imagenPortada", MySqlDbType.VarChar, 255).Value =
             string.IsNullOrWhiteSpace(inmueble.ImagenPortada)
@@ -255,6 +259,7 @@ public class RepositorioInmuebles : RepositorioBase
             Cupo = reader.GetInt32(nameof(Inmueble.Cupo)),
             Coordenadas = reader.GetString(nameof(Inmueble.Coordenadas)),
             PrecioDia = reader.GetDecimal(nameof(Inmueble.PrecioDia)),
+            PorcentajeReserva = reader.GetDecimal(nameof(Inmueble.PorcentajeReserva)),
             Disponible = reader.GetBoolean(nameof(Inmueble.Disponible)),
             ImagenPortada = reader.IsDBNull(imagenOrdinal)
                 ? null

@@ -66,7 +66,7 @@ public class ReservasController : Controller
 
     public IActionResult Create()
     {
-        PrepararFormulario();
+        PrepararFormulario(mostrarPagoInicial: true);
         return View(new Reserva
         {
             FechaDesde = DateTime.Today.AddDays(1),
@@ -83,8 +83,14 @@ public class ReservasController : Controller
         ValidarRelacionesYDisponibilidad(reserva);
         if (!ModelState.IsValid)
         {
-            PrepararFormulario(reserva);
+            PrepararFormulario(reserva, mostrarPagoInicial: true);
             return View(reserva);
+        }
+
+        var inmueble = repositorioInmuebles.ObtenerPorId(reserva.IdInmueble);
+        if (inmueble is null)
+        {
+            return NotFound();
         }
 
         var idUsuario = ObtenerIdUsuarioActual();
@@ -95,14 +101,17 @@ public class ReservasController : Controller
 
         try
         {
-            repositorio.Alta(reserva, idUsuario.Value);
+            repositorio.Alta(
+                reserva,
+                idUsuario.Value,
+                inmueble.PorcentajeReserva);
         }
         catch (MySqlException exception) when (exception.Number == 1452)
         {
             ModelState.AddModelError(
                 string.Empty,
                 "El inmueble o el inquilino seleccionado ya no existe.");
-            PrepararFormulario(reserva);
+            PrepararFormulario(reserva, mostrarPagoInicial: true);
             return View(reserva);
         }
         catch (Exception exception)
@@ -111,11 +120,12 @@ public class ReservasController : Controller
             ModelState.AddModelError(
                 string.Empty,
                 "No se pudo crear la reserva. Intente nuevamente.");
-            PrepararFormulario(reserva);
+            PrepararFormulario(reserva, mostrarPagoInicial: true);
             return View(reserva);
         }
 
-        TempData["Mensaje"] = "La reserva se creó correctamente.";
+        TempData["Mensaje"] =
+            "La reserva y su pago inicial se registraron correctamente.";
         return RedirectToAction(nameof(Index));
     }
 
@@ -290,6 +300,7 @@ public class ReservasController : Controller
             repositorio.Alta(
                 nuevaReserva,
                 idUsuario.Value,
+                reservaOrigen.Inmueble!.PorcentajeReserva,
                 reservaOrigen.IdReserva);
         }
         catch (MySqlException exception) when (exception.Number == 1452)
@@ -316,7 +327,7 @@ public class ReservasController : Controller
         }
 
         TempData["Mensaje"] =
-            $"La renovación se creó como una nueva reserva Nº {nuevaReserva.IdReserva}.";
+            $"La renovación Nº {nuevaReserva.IdReserva} y su pago inicial se registraron correctamente.";
         return RedirectToAction(nameof(Details), new { id = nuevaReserva.IdReserva });
     }
 
@@ -475,7 +486,8 @@ public class ReservasController : Controller
             {
                 id = i.IdInmueble,
                 texto = $"{i.Direccion} · {i.TipoInmueble?.Nombre}",
-                precioDia = i.PrecioDia
+                precioDia = i.PrecioDia,
+                porcentajeReserva = i.PorcentajeReserva
             });
 
         return Json(resultados);
@@ -541,7 +553,9 @@ public class ReservasController : Controller
         }
     }
 
-    private void PrepararFormulario(Reserva? reserva = null)
+    private void PrepararFormulario(
+        Reserva? reserva = null,
+        bool mostrarPagoInicial = false)
     {
         var inmueble = reserva?.IdInmueble > 0
             ? repositorioInmuebles.ObtenerPorId(reserva.IdInmueble)
@@ -556,6 +570,8 @@ public class ReservasController : Controller
         ViewBag.InquilinoSeleccionado = inquilino is null
             ? string.Empty
             : $"{inquilino.Apellido}, {inquilino.Nombre} · DNI {inquilino.Dni}";
+        ViewBag.MostrarPagoInicial = mostrarPagoInicial;
+        ViewBag.PorcentajeReservaSeleccionado = inmueble?.PorcentajeReserva ?? 0m;
     }
 
     private static string? NormalizarEstado(string? estado) =>

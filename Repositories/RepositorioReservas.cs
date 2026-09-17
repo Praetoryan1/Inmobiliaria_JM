@@ -1,3 +1,4 @@
+using System.Globalization;
 using inmobiliaria.Models;
 using MySql.Data.MySqlClient;
 
@@ -23,6 +24,7 @@ public class RepositorioReservas : RepositorioBase
         i.Cupo,
         i.Coordenadas,
         i.PrecioDia,
+        i.PorcentajeReserva,
         i.Disponible,
         i.ImagenPortada,
         t.Nombre AS TipoNombre,
@@ -203,33 +205,79 @@ public class RepositorioReservas : RepositorioBase
     public int Alta(
         Reserva reserva,
         int idUsuarioCreador,
+        decimal porcentajeReserva,
         int? idReservaOrigen = null)
     {
         ArgumentNullException.ThrowIfNull(reserva);
+        if (porcentajeReserva is < 1 or > 100)
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(porcentajeReserva),
+                "El porcentaje de pago inicial debe estar entre 1 y 100.");
+        }
 
         using var connection = CrearConexion();
-        using var command = connection.CreateCommand();
-
-        command.CommandText = """
-            INSERT INTO Reservas
-                (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
-                 FechaTerminacionAnticipada, MontoMulta,
-                 IdUsuarioCreador, IdUsuarioTerminador, IdReservaOrigen)
-            VALUES
-                (@idInmueble, @idInquilino, @fechaDesde, @fechaHasta, @montoDia,
-                 NULL, NULL, @idUsuarioCreador, NULL, @idReservaOrigen);
-            SELECT LAST_INSERT_ID();
-            """;
-        AgregarParametrosReserva(command, reserva);
-        command.Parameters.Add("@idUsuarioCreador", MySqlDbType.Int32).Value =
-            idUsuarioCreador;
-        command.Parameters.Add("@idReservaOrigen", MySqlDbType.Int32).Value =
-            idReservaOrigen.HasValue ? idReservaOrigen.Value : DBNull.Value;
-
         connection.Open();
-        reserva.IdReserva = Convert.ToInt32(command.ExecuteScalar());
+        using var transaction = connection.BeginTransaction();
 
-        return reserva.IdReserva;
+        try
+        {
+            using var crearReserva = connection.CreateCommand();
+            crearReserva.Transaction = transaction;
+            crearReserva.CommandText = """
+                INSERT INTO Reservas
+                    (IdInmueble, IdInquilino, FechaDesde, FechaHasta, MontoDia,
+                     FechaTerminacionAnticipada, MontoMulta,
+                     IdUsuarioCreador, IdUsuarioTerminador, IdReservaOrigen)
+                VALUES
+                    (@idInmueble, @idInquilino, @fechaDesde, @fechaHasta, @montoDia,
+                     NULL, NULL, @idUsuarioCreador, NULL, @idReservaOrigen);
+                """;
+            AgregarParametrosReserva(crearReserva, reserva);
+            crearReserva.Parameters.Add("@idUsuarioCreador", MySqlDbType.Int32).Value =
+                idUsuarioCreador;
+            crearReserva.Parameters.Add("@idReservaOrigen", MySqlDbType.Int32).Value =
+                idReservaOrigen.HasValue ? idReservaOrigen.Value : DBNull.Value;
+            crearReserva.ExecuteNonQuery();
+            reserva.IdReserva = Convert.ToInt32(crearReserva.LastInsertedId);
+
+            var dias = Math.Max(
+                1,
+                (reserva.FechaHasta.Date - reserva.FechaDesde.Date).Days);
+            var importePagoInicial = decimal.Round(
+                dias * reserva.MontoDia * porcentajeReserva / 100m,
+                2,
+                MidpointRounding.AwayFromZero);
+
+            using var crearPago = connection.CreateCommand();
+            crearPago.Transaction = transaction;
+            crearPago.CommandText = """
+                INSERT INTO Pagos
+                    (IdReserva, Concepto, FechaPago, Importe, Anulado,
+                     IdUsuarioCreador, IdUsuarioAnulador, FechaAnulacion)
+                VALUES
+                    (@idReserva, @concepto, @fechaPago, @importe, 0,
+                     @idUsuarioCreador, NULL, NULL);
+                """;
+            crearPago.Parameters.Add("@idReserva", MySqlDbType.Int32).Value =
+                reserva.IdReserva;
+            crearPago.Parameters.Add("@concepto", MySqlDbType.VarChar, 150).Value =
+                $"Pago inicial de reserva ({porcentajeReserva.ToString("0.##", CultureInfo.InvariantCulture)}%)";
+            crearPago.Parameters.Add("@fechaPago", MySqlDbType.Date).Value = DateTime.Today;
+            crearPago.Parameters.Add("@importe", MySqlDbType.Decimal).Value =
+                importePagoInicial;
+            crearPago.Parameters.Add("@idUsuarioCreador", MySqlDbType.Int32).Value =
+                idUsuarioCreador;
+            crearPago.ExecuteNonQuery();
+
+            transaction.Commit();
+            return reserva.IdReserva;
+        }
+        catch
+        {
+            transaction.Rollback();
+            throw;
+        }
     }
 
     public bool TerminarAnticipadamente(
@@ -418,6 +466,7 @@ public class RepositorioReservas : RepositorioBase
                 Cupo = reader.GetInt32(nameof(Inmueble.Cupo)),
                 Coordenadas = reader.GetString(nameof(Inmueble.Coordenadas)),
                 PrecioDia = reader.GetDecimal(nameof(Inmueble.PrecioDia)),
+                PorcentajeReserva = reader.GetDecimal(nameof(Inmueble.PorcentajeReserva)),
                 Disponible = reader.GetBoolean(nameof(Inmueble.Disponible)),
                 ImagenPortada = reader.IsDBNull(imagenOrdinal)
                     ? null
