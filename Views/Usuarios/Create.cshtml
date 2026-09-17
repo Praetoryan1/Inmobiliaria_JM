@@ -1,0 +1,65 @@
+@model UsuarioCrearViewModel
+
+@{
+    ViewData["Title"] = "Nuevo usuario";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="mb-4">
+            <h1 class="h2 mb-1">Nuevo usuario</h1>
+            <p class="text-secondary mb-0">Registre una cuenta y asígnele sus permisos.</p>
+        </div>
+
+        <div class="card app-card">
+            <div class="card-body p-4">
+                <form asp-action="Create" method="post">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Nombre" class="form-label"></label>
+                            <input asp-for="Nombre" class="form-control" />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Apellido" class="form-label"></label>
+                            <input asp-for="Apellido" class="form-control" />
+                            <span asp-validation-for="Apellido" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Rol" class="form-label"></label>
+                            <select asp-for="Rol" class="form-select">
+                                <option value="@RolesUsuario.Empleado">Empleado</option>
+                                <option value="@RolesUsuario.Administrador">Administrador</option>
+                            </select>
+                            <span asp-validation-for="Rol" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label">Contraseña</label>
+                            <input asp-for="Password" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmarPassword" class="form-label">Confirmar contraseña</label>
+                            <input asp-for="ConfirmarPassword" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmarPassword" class="text-danger"></span>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Guardar usuario</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

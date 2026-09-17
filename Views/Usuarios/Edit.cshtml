@@ -1,0 +1,73 @@
+@model UsuarioEditarViewModel
+
+@{
+    ViewData["Title"] = "Editar usuario";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-9">
+        <div class="mb-4">
+            <h1 class="h2 mb-1">Editar usuario</h1>
+            <p class="text-secondary mb-0">Actualice los datos, permisos o contraseña de la cuenta.</p>
+        </div>
+
+        <div class="card app-card">
+            <div class="card-body p-4">
+                <form asp-action="Edit" asp-route-id="@Model.IdUsuario" method="post">
+                    <input asp-for="IdUsuario" type="hidden" />
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="Nombre" class="form-label"></label>
+                            <input asp-for="Nombre" class="form-control" />
+                            <span asp-validation-for="Nombre" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Apellido" class="form-label"></label>
+                            <input asp-for="Apellido" class="form-control" />
+                            <span asp-validation-for="Apellido" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-8">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="Rol" class="form-label"></label>
+                            <select asp-for="Rol" class="form-select">
+                                <option value="@RolesUsuario.Empleado">Empleado</option>
+                                <option value="@RolesUsuario.Administrador">Administrador</option>
+                            </select>
+                            <span asp-validation-for="Rol" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+                    <h2 class="h5">Restablecer contraseña</h2>
+                    <p class="text-secondary small">Deje ambos campos vacíos para conservar la contraseña actual.</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label asp-for="PasswordNueva" class="form-label">Nueva contraseña</label>
+                            <input asp-for="PasswordNueva" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="PasswordNueva" class="text-danger"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmarPasswordNueva" class="form-label">Confirmar nueva contraseña</label>
+                            <input asp-for="ConfirmarPasswordNueva" class="form-control" autocomplete="new-password" />
+                            <span asp-validation-for="ConfirmarPasswordNueva" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
