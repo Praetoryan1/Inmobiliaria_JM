@@ -2,17 +2,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace inmobiliaria.Models;
 
-public static class RolesUsuario
+public class PerfilUsuarioViewModel
 {
-    public const string Administrador = "Administrador";
-    public const string Empleado = "Empleado";
-}
-
-public class Usuario
-{
-    [Key]
-    public int IdUsuario { get; set; }
-
     [Required(ErrorMessage = "El nombre es obligatorio.")]
     [StringLength(100, ErrorMessage = "El nombre no puede superar los 100 caracteres.")]
     public string Nombre { get; set; } = string.Empty;
@@ -26,13 +17,23 @@ public class Usuario
     [StringLength(150, ErrorMessage = "El email no puede superar los 150 caracteres.")]
     public string Email { get; set; } = string.Empty;
 
-    public string PasswordHash { get; set; } = string.Empty;
+    public string? AvatarActual { get; set; }
 
-    [Required]
-    public string Rol { get; set; } = RolesUsuario.Empleado;
+    [Display(Name = "Nuevo avatar")]
+    public IFormFile? AvatarArchivo { get; set; }
 
-    public string? Avatar { get; set; }
+    [DataType(DataType.Password)]
+    [Display(Name = "Contraseña actual")]
+    public string? PasswordActual { get; set; }
 
-    public string NombreCompleto => $"{Nombre} {Apellido}".Trim();
+    [DataType(DataType.Password)]
+    [Display(Name = "Nueva contraseña")]
+    [StringLength(100, MinimumLength = 8,
+        ErrorMessage = "La nueva contraseña debe tener al menos 8 caracteres.")]
+    public string? PasswordNueva { get; set; }
 
+    [DataType(DataType.Password)]
+    [Display(Name = "Confirmar nueva contraseña")]
+    [Compare(nameof(PasswordNueva), ErrorMessage = "Las contraseñas no coinciden.")]
+    public string? ConfirmarPasswordNueva { get; set; }
 }

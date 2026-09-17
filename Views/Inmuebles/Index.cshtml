@@ -108,8 +108,11 @@
                                    class="btn btn-sm btn-outline-secondary">Ver</a>
                                 <a asp-action="Edit" asp-route-id="@inmueble.IdInmueble"
                                    class="btn btn-sm btn-outline-primary">Editar</a>
-                                <a asp-action="Delete" asp-route-id="@inmueble.IdInmueble"
-                                   class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                @if (User.IsInRole(RolesUsuario.Administrador))
+                                {
+                                    <a asp-action="Delete" asp-route-id="@inmueble.IdInmueble"
+                                       class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                }
                             </td>
                         </tr>
                     }

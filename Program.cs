@@ -1,12 +1,38 @@
+using inmobiliaria.Models;
+using inmobiliaria.Repositories;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
-builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioPropietarios>();
-builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioInquilinos>();
-builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioTiposInmueble>();
-builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioInmuebles>();
-builder.Services.AddScoped<inmobiliaria.Repositories.RepositorioReservas>();
+builder.Services.AddScoped<RepositorioPropietarios>();
+builder.Services.AddScoped<RepositorioInquilinos>();
+builder.Services.AddScoped<RepositorioTiposInmueble>();
+builder.Services.AddScoped<RepositorioInmuebles>();
+builder.Services.AddScoped<RepositorioReservas>();
+builder.Services.AddScoped<RepositorioUsuarios>();
+builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
+
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = ".InmobiliariaJM.Auth";
+        options.LoginPath = "/Usuarios/Login";
+        options.AccessDeniedPath = "/Usuarios/AccesoDenegado";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+    });
+
+builder.Services.AddAuthorization(options =>
+{
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 var app = builder.Build();
 
@@ -21,6 +47,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

@@ -44,6 +44,42 @@ body {
   color: #fff;
 }
 
+.app-login-mark {
+  display: grid;
+  width: 4rem;
+  height: 4rem;
+  place-items: center;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: #246b8f;
+  border-radius: 1rem;
+}
+
+.app-user-avatar {
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+}
+
+.app-avatar-preview {
+  display: grid;
+  width: 9rem;
+  height: 9rem;
+  place-items: center;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.app-avatar-placeholder {
+  color: #fff;
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: #246b8f;
+}
+
 .app-hero {
   color: #fff;
   background: linear-gradient(135deg, #17324d 0%, #246b8f 100%);

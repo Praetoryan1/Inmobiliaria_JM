@@ -33,6 +33,19 @@ CREATE TABLE IF NOT EXISTS Inquilinos (
     CONSTRAINT CK_Inquilinos_Dni CHECK (Dni REGEXP '^[0-9]{7,8}$')
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS Usuarios (
+    IdUsuario INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    Nombre VARCHAR(100) NOT NULL,
+    Apellido VARCHAR(100) NOT NULL,
+    Email VARCHAR(150) NOT NULL,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Rol VARCHAR(20) NOT NULL,
+    Avatar VARCHAR(255) NULL,
+    CONSTRAINT PK_Usuarios PRIMARY KEY (IdUsuario),
+    CONSTRAINT UQ_Usuarios_Email UNIQUE (Email),
+    CONSTRAINT CK_Usuarios_Rol CHECK (Rol IN ('Administrador', 'Empleado'))
+) ENGINE = InnoDB;
+
 CREATE TABLE IF NOT EXISTS TiposInmueble (
     IdTipoInmueble INT UNSIGNED NOT NULL AUTO_INCREMENT,
     Nombre VARCHAR(80) NOT NULL,
@@ -97,6 +110,23 @@ INSERT IGNORE INTO Inquilinos (Dni, Nombre, Apellido, Telefono, Email)
 VALUES
     ('30111222', 'María', 'López', '2664111222', 'maria.lopez@example.com'),
     ('33444555', 'Juan', 'Sosa', '2664444555', 'juan.sosa@example.com');
+
+-- Usuario inicial para el primer ingreso.
+-- Email: admin@inmobiliaria.com / Contraseña: Admin123!
+INSERT INTO Usuarios
+    (Nombre, Apellido, Email, PasswordHash, Rol, Avatar)
+SELECT
+    'Administrador',
+    'Inicial',
+    'admin@inmobiliaria.com',
+    'AQAAAAIAAYagAAAAEOXu1Rn+bA508Ro1MmnYf9YLj22J+/E9Qyzz1ceoBYtVa9/ERuWr1gVzeR5sSQ8Wuw==',
+    'Administrador',
+    NULL
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM Usuarios
+    WHERE Email = 'admin@inmobiliaria.com'
+);
 
 INSERT IGNORE INTO TiposInmueble (Nombre)
 VALUES

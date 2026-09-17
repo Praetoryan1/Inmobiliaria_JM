@@ -1,5 +1,6 @@
 using inmobiliaria.Models;
 using inmobiliaria.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MySql.Data.MySqlClient;
 
@@ -131,12 +132,14 @@ public class TiposInmueblesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [Authorize(Roles = RolesUsuario.Administrador)]
     public IActionResult Delete(int id)
     {
         var tipo = repositorio.ObtenerPorId(id);
         return tipo is null ? NotFound() : View(tipo);
     }
 
+    [Authorize(Roles = RolesUsuario.Administrador)]
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
     public IActionResult DeleteConfirmed(int id)

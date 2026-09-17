@@ -19,26 +19,52 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Propietarios" asp-action="Index">Propietarios</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Inquilinos" asp-action="Index">Inquilinos</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="TiposInmuebles" asp-action="Index">Tipos de inmueble</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Inmuebles" asp-action="Index">Inmuebles</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-area="" asp-controller="Reservas" asp-action="Index">Reservas</a>
-                        </li>
-                    </ul>
+                    @if (User.Identity?.IsAuthenticated == true)
+                    {
+                        <ul class="navbar-nav flex-grow-1">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Inicio</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Propietarios" asp-action="Index">Propietarios</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Inquilinos" asp-action="Index">Inquilinos</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="TiposInmuebles" asp-action="Index">Tipos de inmueble</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Inmuebles" asp-action="Index">Inmuebles</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-area="" asp-controller="Reservas" asp-action="Index">Reservas</a>
+                            </li>
+                        </ul>
+                        <ul class="navbar-nav align-items-sm-center">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Usuarios" asp-action="Perfil">
+                                    @User.Identity.Name
+                                    <span class="badge rounded-pill text-bg-light ms-1">
+                                        @(User.IsInRole(RolesUsuario.Administrador) ? "Administrador" : "Empleado")
+                                    </span>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <form asp-controller="Usuarios" asp-action="Logout" method="post">
+                                    <button type="submit" class="btn btn-link nav-link border-0">Salir</button>
+                                </form>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <ul class="navbar-nav ms-auto">
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Usuarios" asp-action="Login">Ingresar</a>
+                            </li>
+                        </ul>
+                    }
                 </div>
             </div>
         </nav>
