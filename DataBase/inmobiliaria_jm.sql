@@ -100,6 +100,38 @@ CREATE TABLE IF NOT EXISTS Reservas (
     INDEX IX_Reservas_Inmueble_Fechas (IdInmueble, FechaDesde, FechaHasta)
 ) ENGINE = InnoDB;
 
+CREATE TABLE IF NOT EXISTS Pagos (
+    IdPago INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    IdReserva INT UNSIGNED NOT NULL,
+    Concepto VARCHAR(150) NOT NULL,
+    FechaPago DATE NOT NULL,
+    Importe DECIMAL(12, 2) NOT NULL,
+    Anulado TINYINT(1) NOT NULL DEFAULT 0,
+    IdUsuarioCreador INT UNSIGNED NOT NULL,
+    IdUsuarioAnulador INT UNSIGNED NULL,
+    FechaAnulacion DATETIME NULL,
+    CONSTRAINT PK_Pagos PRIMARY KEY (IdPago),
+    CONSTRAINT FK_Pagos_Reservas FOREIGN KEY (IdReserva)
+        REFERENCES Reservas (IdReserva)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT FK_Pagos_UsuarioCreador FOREIGN KEY (IdUsuarioCreador)
+        REFERENCES Usuarios (IdUsuario)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT FK_Pagos_UsuarioAnulador FOREIGN KEY (IdUsuarioAnulador)
+        REFERENCES Usuarios (IdUsuario)
+        ON UPDATE CASCADE
+        ON DELETE RESTRICT,
+    CONSTRAINT CK_Pagos_Importe CHECK (Importe > 0),
+    CONSTRAINT CK_Pagos_Anulacion CHECK (
+        (Anulado = 0 AND IdUsuarioAnulador IS NULL AND FechaAnulacion IS NULL)
+        OR
+        (Anulado = 1 AND IdUsuarioAnulador IS NOT NULL AND FechaAnulacion IS NOT NULL)
+    ),
+    INDEX IX_Pagos_Reserva_Fecha (IdReserva, FechaPago)
+) ENGINE = InnoDB;
+
 -- Datos de prueba para comprobar los ABM durante el desarrollo.
 INSERT IGNORE INTO Propietarios (Dni, Nombre, Apellido, Telefono, Email)
 VALUES

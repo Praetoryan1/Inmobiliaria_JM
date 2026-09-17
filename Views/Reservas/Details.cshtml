@@ -19,7 +19,11 @@
                 <h1 class="h2 mb-1">Detalle de la reserva</h1>
                 <p class="text-secondary mb-0">Información completa del alquiler temporario.</p>
             </div>
-            <a asp-action="Edit" asp-route-id="@Model.IdReserva" class="btn btn-primary">Editar</a>
+            <div class="d-flex gap-2">
+                <a asp-controller="Pagos" asp-action="Index" asp-route-idReserva="@Model.IdReserva"
+                   class="btn btn-outline-primary">Ver pagos</a>
+                <a asp-action="Edit" asp-route-id="@Model.IdReserva" class="btn btn-primary">Editar</a>
+            </div>
         </div>
 
         <div class="card app-card">

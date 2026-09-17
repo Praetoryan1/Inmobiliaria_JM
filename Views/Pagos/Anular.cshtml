@@ -1,0 +1,37 @@
+@model Pago
+
+@{
+    ViewData["Title"] = "Anular pago";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card app-card border-danger">
+            <div class="card-body p-4">
+                <h1 class="h3 text-danger">Anular pago</h1>
+                <p>
+                    El pago permanecerá en el historial con estado anulado. Esta operación no modifica
+                    su fecha ni su importe.
+                </p>
+
+                <div class="bg-light rounded p-3 mb-4">
+                    <div class="fw-semibold">@Model.Concepto</div>
+                    <div class="text-secondary">
+                        Reserva Nº @Model.IdReserva · @Model.FechaPago.ToString("dd/MM/yyyy") ·
+                        @Model.Importe.ToString("C")
+                    </div>
+                </div>
+
+                <p class="fw-semibold">¿Desea continuar?</p>
+                <form asp-action="Anular" asp-route-id="@Model.IdPago" method="post">
+                    <input asp-for="IdPago" type="hidden" />
+                    <div class="d-flex justify-content-end gap-2">
+                        <a asp-action="Index" asp-route-idReserva="@Model.IdReserva"
+                           class="btn btn-outline-secondary">Cancelar</a>
+                        <button type="submit" class="btn btn-danger">Sí, anular pago</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

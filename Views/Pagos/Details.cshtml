@@ -1,0 +1,78 @@
+@model Pago
+
+@{
+    ViewData["Title"] = "Detalle del pago";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 mb-4">
+            <div>
+                <h1 class="h2 mb-1">Detalle del pago Nº @Model.IdPago</h1>
+                <p class="text-secondary mb-0">Información de la transacción registrada.</p>
+            </div>
+            @if (!Model.Anulado)
+            {
+                <a asp-action="Edit" asp-route-id="@Model.IdPago" class="btn btn-primary">Editar concepto</a>
+            }
+        </div>
+
+        <div class="card app-card mb-4">
+            <div class="card-body p-4">
+                <dl class="row mb-0 app-details">
+                    <dt class="col-sm-4">Reserva</dt>
+                    <dd class="col-sm-8">Nº @Model.IdReserva · @Model.Reserva?.Inmueble?.Direccion</dd>
+                    <dt class="col-sm-4">Concepto</dt>
+                    <dd class="col-sm-8">@Model.Concepto</dd>
+                    <dt class="col-sm-4">Fecha de pago</dt>
+                    <dd class="col-sm-8">@Model.FechaPago.ToString("dd/MM/yyyy")</dd>
+                    <dt class="col-sm-4">Importe</dt>
+                    <dd class="col-sm-8">@Model.Importe.ToString("C")</dd>
+                    <dt class="col-sm-4">Estado</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge @(Model.Anulado ? "text-bg-danger" : "text-bg-success")">
+                            @Model.Estado
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+        </div>
+
+        @if (User.IsInRole(RolesUsuario.Administrador))
+        {
+            <div class="card app-card mb-4">
+                <div class="card-body p-4">
+                    <h2 class="h5 mb-3">Auditoría</h2>
+                    <dl class="row mb-0 app-details">
+                        <dt class="col-sm-4">Creado por</dt>
+                        <dd class="col-sm-8">
+                            @Model.UsuarioCreador?.NombreCompleto
+                            <span class="text-secondary">· @Model.UsuarioCreador?.Email</span>
+                        </dd>
+                        <dt class="col-sm-4">Anulado por</dt>
+                        <dd class="col-sm-8">
+                            @if (Model.UsuarioAnulador is null)
+                            {
+                                <span>No corresponde</span>
+                            }
+                            else
+                            {
+                                <span>
+                                    @Model.UsuarioAnulador.NombreCompleto
+                                    <span class="text-secondary">· @Model.UsuarioAnulador.Email</span>
+                                </span>
+                            }
+                        </dd>
+                        <dt class="col-sm-4">Fecha de anulación</dt>
+                        <dd class="col-sm-8">
+                            @(Model.FechaAnulacion?.ToString("dd/MM/yyyy HH:mm") ?? "No corresponde")
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        }
+
+        <a asp-action="Index" asp-route-idReserva="@Model.IdReserva"
+           class="btn btn-link px-0">Volver a los pagos</a>
+    </div>
+</div>

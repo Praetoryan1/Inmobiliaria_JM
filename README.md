@@ -1,6 +1,6 @@
 # Inmobiliaria JM
 
-> Sitio web desarrollado con ASP.NET Core MVC para administrar propietarios, inquilinos, tipos de inmueble, inmuebles y reservas temporales.
+> Sitio web desarrollado con ASP.NET Core MVC para gestionar reservas temporales, sus pagos y las principales entidades de una inmobiliaria.
 
 ---
 
@@ -12,12 +12,14 @@
 
 ## Modelado de Datos
 
-El modelo de esta segunda entrega separa a propietarios e inquilinos y relaciona las demás entidades de la siguiente manera:
+El modelo separa a propietarios e inquilinos y relaciona las demás entidades de la siguiente manera:
 
 * Un propietario puede tener muchos inmuebles.
 * Un tipo de inmueble puede clasificar muchos inmuebles.
 * Un inmueble puede aparecer en muchas reservas, siempre que sus fechas no se superpongan.
 * Un inquilino puede realizar muchas reservas.
+* Una reserva puede tener muchos pagos.
+* Cada pago registra el usuario que lo creó y, si fue anulado, el administrador que realizó la anulación.
 
 ### Diagrama Entidad-Relación (DER) / Diagrama de Clases
 
@@ -74,31 +76,61 @@ classDiagram
         +decimal MontoMulta
     }
 
+    class Pago {
+        +int IdPago
+        +int IdReserva
+        +string Concepto
+        +date FechaPago
+        +decimal Importe
+        +bool Anulado
+        +int IdUsuarioCreador
+        +int IdUsuarioAnulador
+        +datetime FechaAnulacion
+    }
+
+    class Usuario {
+        +int IdUsuario
+        +string Nombre
+        +string Apellido
+        +string Email
+        +string PasswordHash
+        +string Rol
+        +string Avatar
+    }
+
     Propietario "1" --> "0..*" Inmueble : posee
     TipoInmueble "1" --> "0..*" Inmueble : clasifica
     Inmueble "1" --> "0..*" Reserva : se reserva
     Inquilino "1" --> "0..*" Reserva : realiza
+    Reserva "1" --> "0..*" Pago : recibe
+    Usuario "1" --> "0..*" Pago : crea
+    Usuario "0..1" --> "0..*" Pago : anula
 ```
 
 </details>
 
 ---
 
-## Alcance de la Segunda Entrega
+## Estado Actual del Proyecto
 
 Esta versión contiene:
 
-* ABM y vista de detalles de propietarios e inquilinos.
-* ABM y vista de detalles de tipos de inmueble.
+* ABM y vista de detalles de propietarios, inquilinos y tipos de inmueble.
 * ABM y vista de detalles de inmuebles, con propietario, tipo, disponibilidad e imagen de portada.
 * ABM y vista de detalles de reservas, relacionadas con un inmueble y un inquilino.
+* Acceso mediante email y contraseña, con roles Administrador y Empleado.
+* Gestión administrativa de usuarios y edición del perfil propio.
+* Registro y consulta de pagos desde cada reserva.
+* Edición limitada al concepto del pago, conservando su fecha e importe originales.
+* Anulación lógica de pagos, sin eliminarlos del historial.
+* Auditoría del usuario creador y del administrador que anuló cada pago.
 * Búsquedas y listados paginados con un máximo de 10 registros por página.
 * Filtro de inmuebles por disponibilidad y filtro de reservas por estado.
 * Validaciones en el navegador y en el servidor.
 * Control de fechas y prevención de reservas superpuestas para un mismo inmueble.
 * Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
 
-Los pagos, usuarios, autenticación y la gestión de terminaciones anticipadas corresponden a próximas entregas.
+La gestión de terminaciones anticipadas, renovaciones, imágenes adicionales e informes se incorporará en los siguientes incrementos de la entrega final.
 
 ---
 
@@ -141,7 +173,7 @@ dotnet restore
 
 ## Crear e Inicializar la Base de Datos
 
-El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, sus cinco tablas y datos iniciales para comprobar los ABM.
+El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea la base `inmobiliaria_jm`, sus siete tablas y datos iniciales para comprobar los ABM.
 
 ### Opción 1: importar con phpMyAdmin
 
@@ -151,7 +183,7 @@ El archivo [`DataBase/inmobiliaria_jm.sql`](DataBase/inmobiliaria_jm.sql) crea l
 4. Seleccionar la pestaña **Importar**.
 5. Elegir el archivo `DataBase/inmobiliaria_jm.sql` del proyecto.
 6. Mantener el formato SQL y presionar **Continuar**.
-7. Verificar que la base `inmobiliaria_jm` contenga las tablas `Propietarios`, `Inquilinos`, `TiposInmueble`, `Inmuebles` y `Reservas`.
+7. Verificar que la base `inmobiliaria_jm` contenga las tablas `Propietarios`, `Inquilinos`, `Usuarios`, `TiposInmueble`, `Inmuebles`, `Reservas` y `Pagos`.
 
 ### Opción 2: importar desde PowerShell
 
@@ -196,6 +228,13 @@ dotnet run --launch-profile http
 http://localhost:5192
 ```
 
+Para el primer ingreso se crea el siguiente administrador:
+
+```text
+Email: admin@inmobiliaria.com
+Contraseña: Admin123!
+```
+
 Rutas principales:
 
 * `/Propietarios`
@@ -203,6 +242,10 @@ Rutas principales:
 * `/TiposInmuebles`
 * `/Inmuebles`
 * `/Reservas`
+* `/Usuarios/Perfil`
+* `/Usuarios` para administradores
+
+Los pagos se abren desde el listado o el detalle de una reserva.
 
 Para detener la aplicación, presionar `Ctrl+C` en la consola.
 
@@ -220,7 +263,7 @@ La dirección HTTPS configurada es `https://localhost:7048`.
 ## Estructura Principal
 
 ```text
-Controllers/     Controladores MVC de los cinco ABM
+Controllers/     Controladores MVC de las entidades y la autenticación
 DataBase/        Script de creación e inicialización de MySQL
 Models/          Entidades, relaciones y validaciones
 Repositories/    Acceso a datos mediante MySql.Data

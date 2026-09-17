@@ -13,6 +13,7 @@ builder.Services.AddScoped<RepositorioInquilinos>();
 builder.Services.AddScoped<RepositorioTiposInmueble>();
 builder.Services.AddScoped<RepositorioInmuebles>();
 builder.Services.AddScoped<RepositorioReservas>();
+builder.Services.AddScoped<RepositorioPagos>();
 builder.Services.AddScoped<RepositorioUsuarios>();
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 

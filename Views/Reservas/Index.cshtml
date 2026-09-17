@@ -92,6 +92,9 @@
                             <td class="text-end text-nowrap">
                                 <a asp-action="Details" asp-route-id="@reserva.IdReserva"
                                    class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-controller="Pagos" asp-action="Index"
+                                   asp-route-idReserva="@reserva.IdReserva"
+                                   class="btn btn-sm btn-outline-secondary">Pagos</a>
                                 <a asp-action="Edit" asp-route-id="@reserva.IdReserva"
                                    class="btn btn-sm btn-outline-primary">Editar</a>
                                 @if (User.IsInRole(RolesUsuario.Administrador))

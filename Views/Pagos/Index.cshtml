@@ -1,0 +1,174 @@
+@model PagoListadoViewModel
+
+@{
+    ViewData["Title"] = $"Pagos de la reserva Nº {Model.Reserva.IdReserva}";
+}
+
+<partial name="_Mensajes" />
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Pagos de la reserva Nº @Model.Reserva.IdReserva</h1>
+        <p class="text-secondary mb-0">
+            @Model.Reserva.Inmueble?.Direccion ·
+            @Model.Reserva.Inquilino?.Apellido, @Model.Reserva.Inquilino?.Nombre
+        </p>
+    </div>
+    <a asp-controller="Reservas" asp-action="Details"
+       asp-route-id="@Model.Reserva.IdReserva" class="btn btn-outline-secondary">
+        Volver a la reserva
+    </a>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4">
+                <div class="text-secondary small text-uppercase mb-1">Total registrado</div>
+                <div class="display-6 fw-semibold">@Model.TotalRegistrado.ToString("C")</div>
+                <p class="text-secondary mb-0 mt-2">Los pagos anulados no se incluyen en este total.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4">
+                <div class="text-secondary small text-uppercase mb-1">Valor estimado de la reserva</div>
+                <div class="display-6 fw-semibold">
+                    @((Math.Max(1, (Model.Reserva.FechaHasta.Date - Model.Reserva.FechaDesde.Date).Days)
+                        * Model.Reserva.MontoDia).ToString("C"))
+                </div>
+                <p class="text-secondary mb-0 mt-2">Calculado con las fechas y el monto diario original.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card app-card mb-4">
+    <div class="card-body p-4">
+        <h2 class="h4 mb-1">Registrar nuevo pago</h2>
+        <p class="text-secondary mb-4">El importe y la fecha quedarán fijos después de guardar.</p>
+        <form asp-action="Create" method="post">
+            <partial name="_FormularioCrear" model="Model.NuevoPago" />
+            <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-primary">Registrar pago</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card app-card mb-4">
+    <div class="card-body">
+        <form asp-action="Index" method="get" class="row g-2 align-items-center">
+            <input type="hidden" name="idReserva" value="@Model.Reserva.IdReserva" />
+            <div class="col">
+                <label for="busqueda" class="visually-hidden">Buscar pagos</label>
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda"
+                       class="form-control" placeholder="Buscar por concepto" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-outline-primary">Buscar</button>
+            </div>
+            @if (!string.IsNullOrWhiteSpace(Model.Busqueda))
+            {
+                <div class="col-auto">
+                    <a asp-action="Index" asp-route-idReserva="@Model.Reserva.IdReserva"
+                       class="btn btn-outline-secondary">Limpiar</a>
+                </div>
+            }
+        </form>
+    </div>
+</div>
+
+<div class="card app-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Concepto</th>
+                    <th>Fecha</th>
+                    <th>Importe</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (!Model.Pagos.Any())
+                {
+                    <tr>
+                        <td colspan="5" class="text-center text-secondary py-5">
+                            No se encontraron pagos para esta reserva.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var pago in Model.Pagos)
+                    {
+                        <tr class="@(pago.Anulado ? "text-secondary" : null)">
+                            <td class="fw-semibold @(pago.Anulado ? "text-decoration-line-through" : null)">
+                                @pago.Concepto
+                            </td>
+                            <td>@pago.FechaPago.ToString("dd/MM/yyyy")</td>
+                            <td>@pago.Importe.ToString("C")</td>
+                            <td>
+                                <span class="badge @(pago.Anulado ? "text-bg-danger" : "text-bg-success")">
+                                    @pago.Estado
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-action="Details" asp-route-id="@pago.IdPago"
+                                   class="btn btn-sm btn-outline-secondary">Ver</a>
+                                @if (!pago.Anulado)
+                                {
+                                    <a asp-action="Edit" asp-route-id="@pago.IdPago"
+                                       class="btn btn-sm btn-outline-primary">Editar concepto</a>
+                                    @if (User.IsInRole(RolesUsuario.Administrador))
+                                    {
+                                        <a asp-action="Anular" asp-route-id="@pago.IdPago"
+                                           class="btn btn-sm btn-outline-danger">Anular</a>
+                                    }
+                                }
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <span class="text-secondary small">@Model.CantidadTotal pago(s) encontrado(s)</span>
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación de pagos">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.PaginaActual == 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-idReserva="@Model.Reserva.IdReserva"
+                           asp-route-busqueda="@Model.Busqueda"
+                           asp-route-pagina="@(Model.PaginaActual - 1)">Anterior</a>
+                    </li>
+                    @for (var pagina = 1; pagina <= Model.TotalPaginas; pagina++)
+                    {
+                        <li class="page-item @(pagina == Model.PaginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="Index"
+                               asp-route-idReserva="@Model.Reserva.IdReserva"
+                               asp-route-busqueda="@Model.Busqueda"
+                               asp-route-pagina="@pagina">@pagina</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.PaginaActual == Model.TotalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="Index"
+                           asp-route-idReserva="@Model.Reserva.IdReserva"
+                           asp-route-busqueda="@Model.Busqueda"
+                           asp-route-pagina="@(Model.PaginaActual + 1)">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
