@@ -147,13 +147,16 @@ Esta versión contiene:
 * Validación de disponibilidad y vínculo con la reserva de origen.
 * Porcentaje de pago inicial configurable para cada inmueble.
 * Creación atómica de la reserva y de su pago inicial obligatorio.
+* Informes paginados de inmuebles y propietarios, por estado o dueño.
+* Ranking de inmuebles más reservados durante los últimos 365 días.
+* Informe de inmuebles sin reservas durante un plazo configurable.
 * Búsquedas y listados paginados con un máximo de 10 registros por página.
 * Filtro de inmuebles por disponibilidad y filtro de reservas por estado.
 * Validaciones en el navegador y en el servidor.
 * Control de fechas y prevención de reservas superpuestas para un mismo inmueble.
 * Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
 
-Los informes se incorporarán en los siguientes incrementos de la entrega final.
+Los informes de reservas y disponibilidad por fechas se incorporarán en el siguiente incremento de la entrega final.
 
 ---
 
@@ -265,6 +268,7 @@ Rutas principales:
 * `/TiposInmuebles`
 * `/Inmuebles`
 * `/Reservas`
+* `/Informes`
 * `/Usuarios/Perfil`
 * `/Usuarios` para administradores
 

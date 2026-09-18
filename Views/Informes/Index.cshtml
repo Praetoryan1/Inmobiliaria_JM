@@ -1,0 +1,71 @@
+@{
+    ViewData["Title"] = "Informes";
+}
+
+<div class="mb-4">
+    <h1 class="h2 mb-1">Informes</h1>
+    <p class="text-secondary mb-0">
+        Consultas operativas de inmuebles y reservas de la inmobiliaria.
+    </p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h2 class="h5">Inmuebles y propietarios</h2>
+                <p class="text-secondary flex-grow-1">
+                    Listado completo de propiedades con su dueño y filtro por estado de oferta.
+                </p>
+                <a asp-action="Inmuebles" class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h2 class="h5">Inmuebles por propietario</h2>
+                <p class="text-secondary flex-grow-1">
+                    Selección de un propietario mediante búsqueda para consultar sus propiedades.
+                </p>
+                <a asp-action="InmueblesPorPropietario"
+                   class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h2 class="h5">Inmuebles más reservados</h2>
+                <p class="text-secondary flex-grow-1">
+                    Ranking por cantidad de reservas iniciadas durante los últimos 365 días.
+                </p>
+                <a asp-action="InmueblesMasReservados"
+                   class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h2 class="h5">Inmuebles sin reservas recientes</h2>
+                <p class="text-secondary flex-grow-1">
+                    Propiedades que no estuvieron ocupadas por una reserva durante un plazo configurable.
+                </p>
+                <a asp-action="InmueblesSinReservas"
+                   class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+</div>

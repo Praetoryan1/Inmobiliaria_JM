@@ -16,6 +16,7 @@ builder.Services.AddScoped<RepositorioInmuebleImagenes>();
 builder.Services.AddScoped<RepositorioReservas>();
 builder.Services.AddScoped<RepositorioPagos>();
 builder.Services.AddScoped<RepositorioUsuarios>();
+builder.Services.AddScoped<RepositorioInformes>();
 builder.Services.AddScoped<IPasswordHasher<Usuario>, PasswordHasher<Usuario>>();
 
 builder.Services

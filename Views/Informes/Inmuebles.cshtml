@@ -1,0 +1,263 @@
+@model InformeInmueblesViewModel
+
+@{
+    ViewData["Title"] = Model.Titulo;
+    var requierePropietario = Model.Tipo == TipoInformeInmueble.PorPropietario;
+    var filtraDisponibilidad = Model.Tipo == TipoInformeInmueble.Todos;
+    var configuraDias = Model.Tipo == TipoInformeInmueble.SinReservas;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@Model.Titulo</h1>
+        <p class="text-secondary mb-0">@Model.Descripcion</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver a informes</a>
+</div>
+
+<div class="card app-card mb-4">
+    <div class="card-body">
+        <form asp-action="@Model.Accion" method="get" class="row g-3 align-items-end">
+            @if (requierePropietario)
+            {
+                <div class="col-12 position-relative">
+                    <label for="propietarioBusqueda" class="form-label">Propietario</label>
+                    <input id="idPropietario" name="idPropietario" type="hidden"
+                           value="@Model.IdPropietario" />
+                    <input id="propietarioBusqueda" type="text" class="form-control"
+                           value="@Model.PropietarioSeleccionado" autocomplete="off"
+                           placeholder="Escriba un nombre, apellido o DNI" />
+                    <div id="propietarioResultados"
+                         class="list-group app-autocomplete-results d-none"></div>
+                    <div class="form-text">
+                        La selección consulta hasta diez propietarios en el servidor.
+                    </div>
+                </div>
+            }
+
+            <div class="col-12 col-lg">
+                <label for="busqueda" class="form-label">Buscar dentro del informe</label>
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda"
+                       class="form-control"
+                       placeholder="Dirección, coordenadas, propietario, DNI o tipo" />
+            </div>
+
+            @if (filtraDisponibilidad)
+            {
+                <div class="col-12 col-sm-5 col-lg-3">
+                    <label for="disponible" class="form-label">Estado de oferta</label>
+                    <select id="disponible" name="disponible" class="form-select">
+                        <option value="">Todos los estados</option>
+                        <option value="true" selected="@(Model.Disponible == true)">
+                            Disponibles
+                        </option>
+                        <option value="false" selected="@(Model.Disponible == false)">
+                            Suspendidos
+                        </option>
+                    </select>
+                </div>
+            }
+
+            @if (configuraDias)
+            {
+                <div class="col-12 col-sm-5 col-lg-3">
+                    <label for="dias" class="form-label">Últimos días</label>
+                    <input id="dias" name="dias" value="@Model.Dias" type="number"
+                           min="1" max="3650" class="form-control" required />
+                </div>
+            }
+
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Consultar</button>
+            </div>
+            <div class="col-auto">
+                <a asp-action="@Model.Accion" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card app-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Portada</th>
+                    <th>Dirección</th>
+                    <th>Tipo</th>
+                    <th>Propietario</th>
+                    <th>Precio por día</th>
+                    <th>Estado</th>
+                    <th>@Model.EtiquetaCantidad</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (requierePropietario && !Model.IdPropietario.HasValue)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary py-5">
+                            Seleccione un propietario para generar el informe.
+                        </td>
+                    </tr>
+                }
+                else if (Model.Resultados.Count == 0)
+                {
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary py-5">
+                            No se encontraron inmuebles para los filtros indicados.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var fila in Model.Resultados)
+                    {
+                        var inmueble = fila.Inmueble;
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(inmueble.ImagenPortada))
+                                {
+                                    <img src="@inmueble.ImagenPortada"
+                                         alt="Portada de @inmueble.Direccion"
+                                         class="app-property-thumb" />
+                                }
+                                else
+                                {
+                                    <div class="app-property-thumb app-property-placeholder">
+                                        Sin foto
+                                    </div>
+                                }
+                            </td>
+                            <td class="fw-semibold">@inmueble.Direccion</td>
+                            <td>@inmueble.TipoInmueble?.Nombre</td>
+                            <td>
+                                @inmueble.Propietario?.Apellido, @inmueble.Propietario?.Nombre
+                                <div class="small text-secondary">
+                                    DNI @inmueble.Propietario?.Dni
+                                </div>
+                            </td>
+                            <td>@inmueble.PrecioDia.ToString("C")</td>
+                            <td>
+                                @if (inmueble.Disponible)
+                                {
+                                    <span class="badge text-bg-success">Disponible</span>
+                                }
+                                else
+                                {
+                                    <span class="badge text-bg-secondary">Suspendido</span>
+                                }
+                            </td>
+                            <td class="text-center fw-semibold">@fila.CantidadReservas</td>
+                            <td class="text-end">
+                                <a asp-controller="Inmuebles" asp-action="Details"
+                                   asp-route-id="@inmueble.IdInmueble"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    Ver
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <span class="text-secondary small">
+            @Model.CantidadTotal inmueble(s) encontrado(s)
+        </span>
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación del informe de inmuebles">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.PaginaActual == 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="@Model.Accion"
+                           asp-route-pagina="@(Model.PaginaActual - 1)"
+                           asp-route-busqueda="@Model.Busqueda"
+                           asp-route-disponible="@Model.Disponible"
+                           asp-route-idPropietario="@Model.IdPropietario"
+                           asp-route-dias="@Model.Dias">Anterior</a>
+                    </li>
+                    @for (var pagina = 1; pagina <= Model.TotalPaginas; pagina++)
+                    {
+                        <li class="page-item @(pagina == Model.PaginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="@Model.Accion"
+                               asp-route-pagina="@pagina"
+                               asp-route-busqueda="@Model.Busqueda"
+                               asp-route-disponible="@Model.Disponible"
+                               asp-route-idPropietario="@Model.IdPropietario"
+                               asp-route-dias="@Model.Dias">@pagina</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.PaginaActual == Model.TotalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="@Model.Accion"
+                           asp-route-pagina="@(Model.PaginaActual + 1)"
+                           asp-route-busqueda="@Model.Busqueda"
+                           asp-route-disponible="@Model.Disponible"
+                           asp-route-idPropietario="@Model.IdPropietario"
+                           asp-route-dias="@Model.Dias">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
+
+@if (requierePropietario)
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const texto = document.getElementById("propietarioBusqueda");
+            const valor = document.getElementById("idPropietario");
+            const resultados = document.getElementById("propietarioResultados");
+            let temporizador;
+
+            const ocultar = () => {
+                resultados.classList.add("d-none");
+                resultados.replaceChildren();
+            };
+
+            const buscar = async () => {
+                const termino = texto.value.trim();
+                try {
+                    const url = "@Url.Action("BuscarPropietarios", "Inmuebles")";
+                    const respuesta = await fetch(`${url}?termino=${encodeURIComponent(termino)}`);
+                    if (!respuesta.ok) {
+                        ocultar();
+                        return;
+                    }
+
+                    const opciones = await respuesta.json();
+                    resultados.replaceChildren();
+                    for (const opcion of opciones) {
+                        const boton = document.createElement("button");
+                        boton.type = "button";
+                        boton.className = "list-group-item list-group-item-action";
+                        boton.textContent = opcion.texto;
+                        boton.addEventListener("click", () => {
+                            valor.value = opcion.id;
+                            texto.value = opcion.texto;
+                            ocultar();
+                        });
+                        resultados.appendChild(boton);
+                    }
+                    resultados.classList.toggle("d-none", opciones.length === 0);
+                } catch {
+                    ocultar();
+                }
+            };
+
+            texto.addEventListener("input", () => {
+                valor.value = "";
+                clearTimeout(temporizador);
+                temporizador = setTimeout(buscar, 250);
+            });
+            texto.addEventListener("focus", buscar);
+            document.addEventListener("click", event => {
+                if (event.target !== texto && !resultados.contains(event.target)) {
+                    ocultar();
+                }
+            });
+        });
+    </script>
+}
