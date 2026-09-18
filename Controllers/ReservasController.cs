@@ -64,14 +64,38 @@ public class ReservasController : Controller
         return reserva is null ? NotFound() : View(reserva);
     }
 
-    public IActionResult Create()
+    public IActionResult Create(
+        int? idInmueble = null,
+        DateTime? fechaDesde = null,
+        DateTime? fechaHasta = null)
     {
-        PrepararFormulario(mostrarPagoInicial: true);
-        return View(new Reserva
+        var desde = fechaDesde?.Date ?? DateTime.Today.AddDays(1);
+        var hasta = fechaHasta?.Date ?? desde.AddDays(1);
+        if (hasta <= desde)
         {
-            FechaDesde = DateTime.Today.AddDays(1),
-            FechaHasta = DateTime.Today.AddDays(2)
-        });
+            hasta = desde.AddDays(1);
+        }
+
+        var reserva = new Reserva
+        {
+            FechaDesde = desde,
+            FechaHasta = hasta
+        };
+
+        if (idInmueble is > 0)
+        {
+            var inmueble = repositorioInmuebles.ObtenerPorId(idInmueble.Value);
+            if (inmueble is null || !inmueble.Disponible)
+            {
+                return NotFound();
+            }
+
+            reserva.IdInmueble = inmueble.IdInmueble;
+            reserva.MontoDia = inmueble.PrecioDia;
+        }
+
+        PrepararFormulario(reserva, mostrarPagoInicial: true);
+        return View(reserva);
     }
 
     [HttpPost]

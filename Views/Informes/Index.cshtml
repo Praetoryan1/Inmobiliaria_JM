@@ -9,6 +9,7 @@
     </p>
 </div>
 
+<h2 class="h4 mb-3">Informes de inmuebles</h2>
 <div class="row g-4">
     <div class="col-md-6">
         <div class="card app-card h-100">
@@ -64,6 +65,69 @@
                 <a asp-action="InmueblesSinReservas"
                    class="btn btn-outline-primary align-self-start">
                     Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2 class="h4 mt-5 mb-3">Informes de reservas</h2>
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h3 class="h5">Reservas vigentes</h3>
+                <p class="text-secondary flex-grow-1">
+                    Alquileres que se encuentran activos de acuerdo con sus fechas.
+                </p>
+                <a asp-action="ReservasVigentes"
+                   class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h3 class="h5">Reservas próximas a finalizar</h3>
+                <p class="text-secondary flex-grow-1">
+                    Reservas que terminan dentro de una cantidad configurable de días.
+                </p>
+                <a asp-action="ReservasPorFinalizar"
+                   class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h3 class="h5">Disponibilidad entre fechas</h3>
+                <p class="text-secondary flex-grow-1">
+                    Inmuebles habilitados que no están ocupados durante el período indicado.
+                </p>
+                <a asp-action="InmueblesDisponibles"
+                   class="btn btn-outline-primary align-self-start">
+                    Abrir informe
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card app-card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <h3 class="h5">Pagos por reserva</h3>
+                <p class="text-secondary flex-grow-1">
+                    Acceso al historial paginado y al registro de nuevos pagos de cada reserva.
+                </p>
+                <a asp-controller="Reservas" asp-action="Index"
+                   class="btn btn-outline-primary align-self-start">
+                    Seleccionar reserva
                 </a>
             </div>
         </div>

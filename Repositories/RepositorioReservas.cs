@@ -144,6 +144,82 @@ public class RepositorioReservas : RepositorioBase
         return Convert.ToInt32(command.ExecuteScalar());
     }
 
+    public IList<Reserva> ObtenerProximasAFinalizar(
+        string? busqueda,
+        int dias,
+        int pagina,
+        int tamPagina)
+    {
+        dias = Math.Clamp(dias, 1, 3650);
+        pagina = Math.Max(1, pagina);
+        tamPagina = Math.Clamp(tamPagina, 1, 10);
+
+        var reservas = new List<Reserva>();
+        using var connection = CrearConexion();
+        using var command = connection.CreateCommand();
+        command.CommandText = $"""
+            SELECT {Columnas}
+            FROM Reservas r
+            INNER JOIN Inmuebles i ON i.IdInmueble = r.IdInmueble
+            INNER JOIN TiposInmueble t ON t.IdTipoInmueble = i.IdTipoInmueble
+            INNER JOIN Propietarios p ON p.IdPropietario = i.IdPropietario
+            INNER JOIN Inquilinos iq ON iq.IdInquilino = r.IdInquilino
+            INNER JOIN Usuarios uc ON uc.IdUsuario = r.IdUsuarioCreador
+            LEFT JOIN Usuarios ut ON ut.IdUsuario = r.IdUsuarioTerminador
+            WHERE (
+                i.Direccion LIKE @busqueda
+                OR t.Nombre LIKE @busqueda
+                OR iq.Dni LIKE @busqueda
+                OR iq.Nombre LIKE @busqueda
+                OR iq.Apellido LIKE @busqueda
+            )
+              AND COALESCE(r.FechaTerminacionAnticipada, r.FechaHasta)
+                  BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL @dias DAY)
+            ORDER BY COALESCE(r.FechaTerminacionAnticipada, r.FechaHasta),
+                r.IdReserva
+            LIMIT @limite OFFSET @desplazamiento;
+            """;
+        AgregarParametrosProximas(command, busqueda, dias, pagina, tamPagina);
+        connection.Open();
+
+        using var reader = command.ExecuteReader();
+        while (reader.Read())
+        {
+            reservas.Add(MapearReserva(reader));
+        }
+
+        return reservas;
+    }
+
+    public int ObtenerCantidadProximasAFinalizar(string? busqueda, int dias)
+    {
+        dias = Math.Clamp(dias, 1, 3650);
+        using var connection = CrearConexion();
+        using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COUNT(*)
+            FROM Reservas r
+            INNER JOIN Inmuebles i ON i.IdInmueble = r.IdInmueble
+            INNER JOIN TiposInmueble t ON t.IdTipoInmueble = i.IdTipoInmueble
+            INNER JOIN Inquilinos iq ON iq.IdInquilino = r.IdInquilino
+            WHERE (
+                i.Direccion LIKE @busqueda
+                OR t.Nombre LIKE @busqueda
+                OR iq.Dni LIKE @busqueda
+                OR iq.Nombre LIKE @busqueda
+                OR iq.Apellido LIKE @busqueda
+            )
+              AND COALESCE(r.FechaTerminacionAnticipada, r.FechaHasta)
+                  BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL @dias DAY);
+            """;
+        command.Parameters.Add("@busqueda", MySqlDbType.VarChar, 202).Value =
+            $"%{busqueda?.Trim() ?? string.Empty}%";
+        command.Parameters.Add("@dias", MySqlDbType.Int32).Value = dias;
+        connection.Open();
+
+        return Convert.ToInt32(command.ExecuteScalar());
+    }
+
     public Reserva? ObtenerPorId(int id)
     {
         if (id <= 0)
@@ -402,6 +478,21 @@ public class RepositorioReservas : RepositorioBase
         int tamPagina)
     {
         AgregarParametrosFiltros(command, busqueda, estado);
+        command.Parameters.Add("@limite", MySqlDbType.Int32).Value = tamPagina;
+        command.Parameters.Add("@desplazamiento", MySqlDbType.Int32).Value =
+            (pagina - 1) * tamPagina;
+    }
+
+    private static void AgregarParametrosProximas(
+        MySqlCommand command,
+        string? busqueda,
+        int dias,
+        int pagina,
+        int tamPagina)
+    {
+        command.Parameters.Add("@busqueda", MySqlDbType.VarChar, 202).Value =
+            $"%{busqueda?.Trim() ?? string.Empty}%";
+        command.Parameters.Add("@dias", MySqlDbType.Int32).Value = dias;
         command.Parameters.Add("@limite", MySqlDbType.Int32).Value = tamPagina;
         command.Parameters.Add("@desplazamiento", MySqlDbType.Int32).Value =
             (pagina - 1) * tamPagina;

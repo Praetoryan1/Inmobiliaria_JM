@@ -238,6 +238,85 @@ public class RepositorioInformes : RepositorioBase
         return Convert.ToInt32(comando.ExecuteScalar());
     }
 
+    public IList<InformeInmueble> ObtenerDisponiblesEntreFechas(
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        string? busqueda,
+        int pagina,
+        int tamPagina)
+    {
+        pagina = Math.Max(1, pagina);
+        tamPagina = Math.Clamp(tamPagina, 1, 10);
+
+        using var conexion = CrearConexion();
+        using var comando = new MySqlCommand(
+            $"""
+            SELECT
+                {ColumnasInmueble},
+                0 AS CantidadReservas
+            FROM Inmuebles i
+            INNER JOIN Propietarios p ON p.IdPropietario = i.IdPropietario
+            INNER JOIN TiposInmueble t ON t.IdTipoInmueble = i.IdTipoInmueble
+            WHERE {FiltroBusqueda}
+              AND i.Disponible = 1
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM Reservas r
+                  WHERE r.IdInmueble = i.IdInmueble
+                    AND r.FechaDesde <= @fechaHasta
+                    AND COALESCE(r.FechaTerminacionAnticipada, r.FechaHasta)
+                        >= @fechaDesde
+              )
+            ORDER BY i.Direccion, i.IdInmueble
+            LIMIT @limite OFFSET @desplazamiento;
+            """,
+            conexion);
+        AgregarParametrosDisponibilidad(
+            comando,
+            fechaDesde,
+            fechaHasta,
+            busqueda,
+            pagina,
+            tamPagina);
+        conexion.Open();
+
+        return LeerResultados(comando);
+    }
+
+    public int ObtenerCantidadDisponiblesEntreFechas(
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        string? busqueda)
+    {
+        using var conexion = CrearConexion();
+        using var comando = new MySqlCommand(
+            $"""
+            SELECT COUNT(*)
+            FROM Inmuebles i
+            INNER JOIN Propietarios p ON p.IdPropietario = i.IdPropietario
+            INNER JOIN TiposInmueble t ON t.IdTipoInmueble = i.IdTipoInmueble
+            WHERE {FiltroBusqueda}
+              AND i.Disponible = 1
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM Reservas r
+                  WHERE r.IdInmueble = i.IdInmueble
+                    AND r.FechaDesde <= @fechaHasta
+                    AND COALESCE(r.FechaTerminacionAnticipada, r.FechaHasta)
+                        >= @fechaDesde
+              );
+            """,
+            conexion);
+        AgregarParametrosDisponibilidad(
+            comando,
+            fechaDesde,
+            fechaHasta,
+            busqueda);
+        conexion.Open();
+
+        return Convert.ToInt32(comando.ExecuteScalar());
+    }
+
     private static IList<InformeInmueble> LeerResultados(MySqlCommand comando)
     {
         var resultados = new List<InformeInmueble>();
@@ -299,6 +378,26 @@ public class RepositorioInformes : RepositorioBase
     {
         comando.Parameters.Add("@busqueda", MySqlDbType.VarChar, 202).Value =
             $"%{busqueda?.Trim() ?? string.Empty}%";
+    }
+
+    private static void AgregarParametrosDisponibilidad(
+        MySqlCommand comando,
+        DateTime fechaDesde,
+        DateTime fechaHasta,
+        string? busqueda,
+        int? pagina = null,
+        int? tamPagina = null)
+    {
+        AgregarParametroBusqueda(comando, busqueda);
+        comando.Parameters.Add("@fechaDesde", MySqlDbType.Date).Value =
+            fechaDesde.Date;
+        comando.Parameters.Add("@fechaHasta", MySqlDbType.Date).Value =
+            fechaHasta.Date;
+
+        if (pagina.HasValue && tamPagina.HasValue)
+        {
+            AgregarParametrosPagina(comando, pagina.Value, tamPagina.Value);
+        }
     }
 
     private static InformeInmueble Mapear(MySqlDataReader lector)

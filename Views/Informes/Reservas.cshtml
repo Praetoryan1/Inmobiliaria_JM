@@ -1,0 +1,147 @@
+@model InformeReservasViewModel
+
+@{
+    ViewData["Title"] = Model.Titulo;
+    var configuraDias = Model.Tipo == TipoInformeReserva.PorFinalizar;
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">@Model.Titulo</h1>
+        <p class="text-secondary mb-0">@Model.Descripcion</p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver a informes</a>
+</div>
+
+<div class="card app-card mb-4">
+    <div class="card-body">
+        <form asp-action="@Model.Accion" method="get" class="row g-3 align-items-end">
+            <div class="col-12 col-lg">
+                <label for="busqueda" class="form-label">Buscar dentro del informe</label>
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda"
+                       class="form-control"
+                       placeholder="Inmueble, tipo, inquilino o DNI" />
+            </div>
+            @if (configuraDias)
+            {
+                <div class="col-12 col-sm-5 col-lg-3">
+                    <label for="dias" class="form-label">Próximos días</label>
+                    <input id="dias" name="dias" value="@Model.Dias" type="number"
+                           min="1" max="3650" class="form-control" required />
+                </div>
+            }
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Consultar</button>
+            </div>
+            <div class="col-auto">
+                <a asp-action="@Model.Accion" class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card app-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Inmueble</th>
+                    <th>Inquilino</th>
+                    <th>Desde</th>
+                    <th>Finalización original</th>
+                    <th>Finalización efectiva</th>
+                    <th>Estado</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Resultados.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-5">
+                            No se encontraron reservas para los filtros indicados.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var reserva in Model.Resultados)
+                    {
+                        var fechaEfectiva = reserva.FechaTerminacionAnticipada
+                            ?? reserva.FechaHasta;
+                        var claseEstado = reserva.Estado.StartsWith("Vigente")
+                            ? "text-bg-success"
+                            : reserva.Estado == "Pendiente"
+                                ? "text-bg-primary"
+                                : "text-bg-secondary";
+                        <tr>
+                            <td>
+                                <div class="fw-semibold">@reserva.Inmueble?.Direccion</div>
+                                <div class="small text-secondary">
+                                    @reserva.Inmueble?.TipoInmueble?.Nombre
+                                </div>
+                            </td>
+                            <td>
+                                @reserva.Inquilino?.Apellido, @reserva.Inquilino?.Nombre
+                                <div class="small text-secondary">
+                                    DNI @reserva.Inquilino?.Dni
+                                </div>
+                            </td>
+                            <td>@reserva.FechaDesde.ToString("dd/MM/yyyy")</td>
+                            <td>@reserva.FechaHasta.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                @fechaEfectiva.ToString("dd/MM/yyyy")
+                                @if (reserva.FechaTerminacionAnticipada.HasValue)
+                                {
+                                    <div class="small text-secondary">Terminación anticipada</div>
+                                }
+                            </td>
+                            <td><span class="badge @claseEstado">@reserva.Estado</span></td>
+                            <td class="text-end text-nowrap">
+                                <a asp-controller="Reservas" asp-action="Details"
+                                   asp-route-id="@reserva.IdReserva"
+                                   class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-controller="Pagos" asp-action="Index"
+                                   asp-route-idReserva="@reserva.IdReserva"
+                                   class="btn btn-sm btn-outline-primary">Pagos</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <span class="text-secondary small">
+            @Model.CantidadTotal reserva(s) encontrada(s)
+        </span>
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación del informe de reservas">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.PaginaActual == 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="@Model.Accion"
+                           asp-route-pagina="@(Model.PaginaActual - 1)"
+                           asp-route-busqueda="@Model.Busqueda"
+                           asp-route-dias="@Model.Dias">Anterior</a>
+                    </li>
+                    @for (var pagina = 1; pagina <= Model.TotalPaginas; pagina++)
+                    {
+                        <li class="page-item @(pagina == Model.PaginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="@Model.Accion"
+                               asp-route-pagina="@pagina"
+                               asp-route-busqueda="@Model.Busqueda"
+                               asp-route-dias="@Model.Dias">@pagina</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.PaginaActual == Model.TotalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="@Model.Accion"
+                           asp-route-pagina="@(Model.PaginaActual + 1)"
+                           asp-route-busqueda="@Model.Busqueda"
+                           asp-route-dias="@Model.Dias">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

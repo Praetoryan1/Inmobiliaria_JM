@@ -1,0 +1,157 @@
+@model InformeDisponibilidadViewModel
+
+@{
+    ViewData["Title"] = "Disponibilidad entre fechas";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-4">
+    <div>
+        <h1 class="h2 mb-1">Disponibilidad entre fechas</h1>
+        <p class="text-secondary mb-0">
+            Inmuebles habilitados y sin reservas superpuestas durante todo el período.
+        </p>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary">Volver a informes</a>
+</div>
+
+@if (!string.IsNullOrWhiteSpace(Model.Error))
+{
+    <div class="alert alert-danger" role="alert">@Model.Error</div>
+}
+
+<div class="card app-card mb-4">
+    <div class="card-body">
+        <form asp-action="InmueblesDisponibles" method="get"
+              class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                <label for="fechaDesde" class="form-label">Fecha desde</label>
+                <input id="fechaDesde" name="fechaDesde" type="date"
+                       value="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                       class="form-control" required />
+            </div>
+            <div class="col-12 col-md-3">
+                <label for="fechaHasta" class="form-label">Fecha hasta</label>
+                <input id="fechaHasta" name="fechaHasta" type="date"
+                       value="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                       class="form-control" required />
+            </div>
+            <div class="col-12 col-md">
+                <label for="busqueda" class="form-label">Características</label>
+                <input id="busqueda" name="busqueda" value="@Model.Busqueda"
+                       class="form-control"
+                       placeholder="Dirección, coordenadas, propietario, DNI o tipo" />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Buscar disponibilidad</button>
+            </div>
+            <div class="col-auto">
+                <a asp-action="InmueblesDisponibles"
+                   class="btn btn-outline-secondary">Limpiar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card app-card">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Portada</th>
+                    <th>Dirección</th>
+                    <th>Tipo</th>
+                    <th>Propietario</th>
+                    <th>Cupo</th>
+                    <th>Precio por día</th>
+                    <th class="text-end">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Resultados.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="text-center text-secondary py-5">
+                            No se encontraron inmuebles disponibles para el período indicado.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var fila in Model.Resultados)
+                    {
+                        var inmueble = fila.Inmueble;
+                        <tr>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(inmueble.ImagenPortada))
+                                {
+                                    <img src="@inmueble.ImagenPortada"
+                                         alt="Portada de @inmueble.Direccion"
+                                         class="app-property-thumb" />
+                                }
+                                else
+                                {
+                                    <div class="app-property-thumb app-property-placeholder">
+                                        Sin foto
+                                    </div>
+                                }
+                            </td>
+                            <td class="fw-semibold">@inmueble.Direccion</td>
+                            <td>@inmueble.TipoInmueble?.Nombre</td>
+                            <td>
+                                @inmueble.Propietario?.Apellido, @inmueble.Propietario?.Nombre
+                            </td>
+                            <td>@inmueble.Cupo persona(s)</td>
+                            <td>@inmueble.PrecioDia.ToString("C")</td>
+                            <td class="text-end text-nowrap">
+                                <a asp-controller="Inmuebles" asp-action="Details"
+                                   asp-route-id="@inmueble.IdInmueble"
+                                   class="btn btn-sm btn-outline-secondary">Ver</a>
+                                <a asp-controller="Reservas" asp-action="Create"
+                                   asp-route-idInmueble="@inmueble.IdInmueble"
+                                   asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                                   asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                                   class="btn btn-sm btn-primary">Crear reserva</a>
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer bg-white d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3">
+        <span class="text-secondary small">
+            @Model.CantidadTotal inmueble(s) disponible(s)
+        </span>
+        @if (Model.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación de inmuebles disponibles">
+                <ul class="pagination pagination-sm mb-0">
+                    <li class="page-item @(Model.PaginaActual == 1 ? "disabled" : null)">
+                        <a class="page-link" asp-action="InmueblesDisponibles"
+                           asp-route-pagina="@(Model.PaginaActual - 1)"
+                           asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                           asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                           asp-route-busqueda="@Model.Busqueda">Anterior</a>
+                    </li>
+                    @for (var pagina = 1; pagina <= Model.TotalPaginas; pagina++)
+                    {
+                        <li class="page-item @(pagina == Model.PaginaActual ? "active" : null)">
+                            <a class="page-link" asp-action="InmueblesDisponibles"
+                               asp-route-pagina="@pagina"
+                               asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                               asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                               asp-route-busqueda="@Model.Busqueda">@pagina</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.PaginaActual == Model.TotalPaginas ? "disabled" : null)">
+                        <a class="page-link" asp-action="InmueblesDisponibles"
+                           asp-route-pagina="@(Model.PaginaActual + 1)"
+                           asp-route-fechaDesde="@Model.FechaDesde.ToString("yyyy-MM-dd")"
+                           asp-route-fechaHasta="@Model.FechaHasta.ToString("yyyy-MM-dd")"
+                           asp-route-busqueda="@Model.Busqueda">Siguiente</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

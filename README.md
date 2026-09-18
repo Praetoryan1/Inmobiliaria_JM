@@ -150,13 +150,16 @@ Esta versión contiene:
 * Informes paginados de inmuebles y propietarios, por estado o dueño.
 * Ranking de inmuebles más reservados durante los últimos 365 días.
 * Informe de inmuebles sin reservas durante un plazo configurable.
+* Informes de reservas vigentes y próximas a finalizar.
+* Búsqueda de inmuebles disponibles entre dos fechas, con acceso a crear la reserva.
+* Consulta paginada y carga de pagos desde cada reserva.
 * Búsquedas y listados paginados con un máximo de 10 registros por página.
 * Filtro de inmuebles por disponibilidad y filtro de reservas por estado.
 * Validaciones en el navegador y en el servidor.
 * Control de fechas y prevención de reservas superpuestas para un mismo inmueble.
 * Persistencia en MySQL/MariaDB mediante consultas parametrizadas.
 
-Los informes de reservas y disponibilidad por fechas se incorporarán en el siguiente incremento de la entrega final.
+La versión actual incluye todos los informes solicitados en la narrativa.
 
 ---
 

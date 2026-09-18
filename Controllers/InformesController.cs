@@ -9,13 +9,16 @@ public class InformesController : Controller
     private const int TamPagina = 10;
     private readonly RepositorioInformes repositorio;
     private readonly RepositorioPropietarios repositorioPropietarios;
+    private readonly RepositorioReservas repositorioReservas;
 
     public InformesController(
         RepositorioInformes repositorio,
-        RepositorioPropietarios repositorioPropietarios)
+        RepositorioPropietarios repositorioPropietarios,
+        RepositorioReservas repositorioReservas)
     {
         this.repositorio = repositorio;
         this.repositorioPropietarios = repositorioPropietarios;
+        this.repositorioReservas = repositorioReservas;
     }
 
     public IActionResult Index() => View();
@@ -134,6 +137,99 @@ public class InformesController : Controller
                 TamPagina),
             Busqueda = busqueda,
             Dias = dias,
+            PaginaActual = pagina,
+            TotalPaginas = totalPaginas,
+            CantidadTotal = cantidad
+        });
+    }
+
+    public IActionResult ReservasVigentes(
+        string? busqueda = null,
+        int pagina = 1)
+    {
+        var cantidad = repositorioReservas.ObtenerCantidad(busqueda, "vigente");
+        pagina = NormalizarPagina(pagina, cantidad, out var totalPaginas);
+
+        return View("Reservas", new InformeReservasViewModel
+        {
+            Tipo = TipoInformeReserva.Vigentes,
+            Resultados = repositorioReservas.ObtenerLista(
+                busqueda,
+                "vigente",
+                pagina,
+                TamPagina),
+            Busqueda = busqueda,
+            PaginaActual = pagina,
+            TotalPaginas = totalPaginas,
+            CantidadTotal = cantidad
+        });
+    }
+
+    public IActionResult ReservasPorFinalizar(
+        string? busqueda = null,
+        int dias = 30,
+        int pagina = 1)
+    {
+        dias = Math.Clamp(dias, 1, 3650);
+        var cantidad = repositorioReservas.ObtenerCantidadProximasAFinalizar(
+            busqueda,
+            dias);
+        pagina = NormalizarPagina(pagina, cantidad, out var totalPaginas);
+
+        return View("Reservas", new InformeReservasViewModel
+        {
+            Tipo = TipoInformeReserva.PorFinalizar,
+            Resultados = repositorioReservas.ObtenerProximasAFinalizar(
+                busqueda,
+                dias,
+                pagina,
+                TamPagina),
+            Busqueda = busqueda,
+            Dias = dias,
+            PaginaActual = pagina,
+            TotalPaginas = totalPaginas,
+            CantidadTotal = cantidad
+        });
+    }
+
+    public IActionResult InmueblesDisponibles(
+        DateTime? fechaDesde = null,
+        DateTime? fechaHasta = null,
+        string? busqueda = null,
+        int pagina = 1)
+    {
+        var desde = fechaDesde?.Date ?? DateTime.Today.AddDays(1);
+        var hasta = fechaHasta?.Date ?? desde.AddDays(1);
+        if (hasta <= desde)
+        {
+            return View("Disponibilidad", new InformeDisponibilidadViewModel
+            {
+                FechaDesde = desde,
+                FechaHasta = hasta,
+                Busqueda = busqueda,
+                Error = "La fecha hasta debe ser posterior a la fecha desde.",
+                PaginaActual = 1,
+                TotalPaginas = 1
+            });
+        }
+
+        var cantidad = repositorio.ObtenerCantidadDisponiblesEntreFechas(
+            desde,
+            hasta,
+            busqueda);
+        pagina = NormalizarPagina(pagina, cantidad, out var totalPaginas);
+
+        return View("Disponibilidad", new InformeDisponibilidadViewModel
+        {
+            Resultados = repositorio.ObtenerDisponiblesEntreFechas(
+                desde,
+                hasta,
+                busqueda,
+                pagina,
+                TamPagina),
+            FechaDesde = desde,
+            FechaHasta = hasta,
+            Busqueda = busqueda,
             PaginaActual = pagina,
             TotalPaginas = totalPaginas,
             CantidadTotal = cantidad
