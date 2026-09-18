@@ -4,44 +4,62 @@
     ViewData["Title"] = "Ingresar";
 }
 
-<div class="row justify-content-center py-lg-5">
-    <div class="col-12 col-md-7 col-lg-5">
-        <div class="card app-card">
-            <div class="card-body p-4 p-lg-5">
-                <div class="text-center mb-4">
-                    <div class="app-login-mark mx-auto mb-3">JM</div>
-                    <h1 class="h3 mb-2">Ingresar al sistema</h1>
-                    <p class="text-secondary mb-0">
-                        Acceso para administradores y empleados de la inmobiliaria.
+<section class="app-login-page">
+    <div class="card app-login-card">
+        <div class="row g-0">
+            <div class="col-lg-5 app-login-welcome">
+                <div class="app-login-welcome-content">
+                    <div class="app-login-brand mb-4">
+                        <span class="app-login-mark">JM</span>
+                        <span>Inmobiliaria JM</span>
+                    </div>
+                    <p class="app-login-eyebrow mb-2">Gestión inmobiliaria</p>
+                    <h1 class="display-6 fw-semibold mb-3">Todo el sistema en un solo lugar.</h1>
+                    <p class="app-login-description mb-0">
+                        Administra inmuebles, reservas, pagos y clientes de manera simple y segura.
                     </p>
                 </div>
+            </div>
 
-                <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
-
-                    <div class="mb-3">
-                        <label asp-for="Email" class="form-label"></label>
-                        <input asp-for="Email" class="form-control" autocomplete="username" />
-                        <span asp-validation-for="Email" class="text-danger"></span>
+            <div class="col-lg-7">
+                <div class="app-login-form p-4 p-sm-5">
+                    <div class="mb-4">
+                        <p class="app-login-eyebrow text-primary mb-2">Bienvenido</p>
+                        <h2 class="h3 fw-bold mb-2">Ingresar al sistema</h2>
+                        <p class="text-secondary mb-0">
+                            Utiliza las credenciales asignadas por la inmobiliaria.
+                        </p>
                     </div>
 
-                    <div class="mb-3">
-                        <label asp-for="Password" class="form-label"></label>
-                        <input asp-for="Password" class="form-control" autocomplete="current-password" />
-                        <span asp-validation-for="Password" class="text-danger"></span>
-                    </div>
+                    <form asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
-                    <div class="form-check mb-4">
-                        <input asp-for="Recordarme" class="form-check-input" />
-                        <label asp-for="Recordarme" class="form-check-label"></label>
-                    </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="username"
+                                   placeholder="nombre@correo.com" autofocus />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary w-100">Ingresar</button>
-                </form>
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" class="form-control" autocomplete="current-password"
+                                   placeholder="Ingresa tu contraseña" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            <input asp-for="Recordarme" class="form-check-input" />
+                            <label asp-for="Recordarme" class="form-check-label text-secondary"></label>
+                        </div>
+
+                        <button type="submit" class="btn app-login-button w-100">Ingresar</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
